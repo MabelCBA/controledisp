@@ -398,7 +398,7 @@ function assinarDispositivos(){
   }, err=>{
     console.error('Erro ao sincronizar com o Firebase:', err);
     dadosCarregados = false;
-    document.getElementById('listArea').innerHTML = `<div class="empty">${ICONS.boxOpen}<h3>Não foi possível conectar ao Firebase</h3><p>Verifique a conexão com a internet e as regras de segurança do Firestore no projeto "qualidadenors-eed75".</p></div>`;
+    document.getElementById('listArea').innerHTML = `<div class="empty">${ICONS.boxOpen}<h3>Não foi possível conectar ao Firebase</h3><p>Verifique a conexão com a internet e as regras de segurança do Firestore no projeto "qualidadenors-eed75". (código: ${err&&err.code?err.code:'desconhecido'})</p></div>`;
     showToast('Erro ao conectar ao banco de dados.', true);
   });
 }
@@ -567,7 +567,8 @@ async function changePassword(){
     showToast('Senha de edição atualizada.');
   }catch(e){
     console.error(e);
-    err.textContent = 'Não foi possível salvar a nova senha no Firebase. Tente novamente.';
+    const code = e && e.code ? e.code : '';
+    err.textContent = 'Não foi possível salvar a nova senha no Firebase.'+(code?' (código: '+code+')':'');
     err.classList.add('show');
   }
 }
@@ -633,7 +634,12 @@ async function saveDevice(){
     // a lista é atualizada automaticamente pelo listener em tempo real do Firestore
   }catch(e){
     console.error(e);
-    err.textContent = 'Não foi possível salvar no Firebase. Verifique a conexão e as regras do Firestore.';
+    const code = e && e.code ? e.code : 'erro desconhecido';
+    if(code === 'permission-denied'){
+      err.textContent = 'Firebase bloqueou a gravação (permission-denied). Abra o Firebase Console > Firestore Database > Regras e libere "allow write". (código: '+code+')';
+    } else {
+      err.textContent = 'Não foi possível salvar no Firebase. (código: '+code+(e&&e.message?' — '+e.message:'')+')';
+    }
     err.classList.add('show');
   }
 }
@@ -645,7 +651,8 @@ function confirmDelete(id){
     showToast('Dispositivo excluído.');
   }).catch(e=>{
     console.error(e);
-    showToast('Não foi possível excluir no Firebase. Tente novamente.', true);
+    const code = e && e.code ? e.code : '';
+    showToast('Não foi possível excluir no Firebase.'+(code?' ('+code+')':''), true);
   });
 }
 
