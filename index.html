@@ -99,6 +99,16 @@
   .list-head{display:grid;grid-template-columns:auto 1.3fr 1fr 1.1fr 0.9fr 0.9fr auto;gap:18px;padding:0 20px 0 26px;margin-bottom:2px;}
   .list-head span{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-faint);}
 
+  /* ---------- grupos por filial ---------- */
+  .filial-group{margin-bottom:24px;}
+  .filial-group:last-child{margin-bottom:0;}
+  .filial-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:2px 4px 10px;}
+  .filial-head .filial-name{display:flex;align-items:center;gap:8px;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:var(--primary);}
+  .filial-head .filial-name svg{width:15px;height:15px;color:var(--accent);flex-shrink:0;}
+  .filial-count{font-size:11px;font-weight:700;color:var(--ink-soft);background:var(--surface-alt);padding:4px 10px;border-radius:999px;flex-shrink:0;}
+  .conn-status{font-size:12px;font-weight:600;padding:6px 10px;border-radius:999px;display:flex;align-items:center;gap:6px;}
+  .conn-status.err{background:var(--danger-soft);color:var(--danger);}
+
   .empty{text-align:center;padding:60px 20px;background:var(--surface);border:1px dashed var(--line);border-radius:var(--radius);color:var(--ink-soft);}
   .empty svg{width:40px;height:40px;color:var(--ink-faint);margin-bottom:12px;}
   .empty h3{margin:0 0 6px;color:var(--ink);font-size:16px;}
@@ -257,7 +267,7 @@
         <label>Digite a senha para continuar</label>
         <input type="password" id="passInput" placeholder="••••••••" onkeydown="if(event.key==='Enter')confirmPassword()">
       </div>
-      <p class="hint">Essa senha libera a edição e exclusão de dispositivos, além da área administrativa, para esta sessão do navegador.</p>
+      <p class="hint">A visualização dos dispositivos de todas as filiais é sempre livre. Essa senha libera apenas a edição e a exclusão, além da área administrativa, para esta sessão do navegador.</p>
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="closeModal('passOverlay')">Cancelar</button>
@@ -297,9 +307,29 @@
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script>
-const DEVICES_KEY = 'devices-list';
-const SETTINGS_KEY = 'admin-settings';
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import { getAnalytics, isSupported as analyticsIsSupported } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-analytics.js";
+import {
+  getFirestore, collection, doc, getDoc, setDoc, deleteDoc, onSnapshot
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBWTR2Cm4JX7LJNnrIkQBxQlSSb2qZSvos",
+  authDomain: "qualidadenors-eed75.firebaseapp.com",
+  projectId: "qualidadenors-eed75",
+  storageBucket: "qualidadenors-eed75.firebasestorage.app",
+  messagingSenderId: "903332464109",
+  appId: "1:903332464109:web:6805fa60b99bae969013e4",
+  measurementId: "G-1C0TDYFG36"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+analyticsIsSupported().then(ok=>{ if(ok){ try{ getAnalytics(fbApp); }catch(e){} } }).catch(()=>{});
+
+const devicesCol = collection(db, 'dispositivos');
+const settingsRef = doc(db, 'configuracoes', 'admin');
 const DEFAULT_PASSWORD = 'admin123';
 
 let devices = [];
@@ -307,6 +337,7 @@ let settings = { password: DEFAULT_PASSWORD };
 let unlocked = false;
 let editingId = null;
 let pendingAction = null; // 'edit:<id>' | 'delete:<id>' | 'admin'
+let dadosCarregados = false;
 
 const ICONS = {
   phone: '<svg viewBox="0 0 24 24" fill="none"><rect x="7" y="2" width="10" height="20" rx="2" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="18" r="0.8" fill="currentColor"/></svg>',
@@ -316,7 +347,8 @@ const ICONS = {
   lock: '<svg viewBox="0 0 24 24" fill="none"><rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 10V7a4 4 0 1 1 8 0v3" stroke="currentColor" stroke-width="1.8"/></svg>',
   unlock: '<svg viewBox="0 0 24 24" fill="none"><rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 10V7a4 4 0 0 1 7.5-1.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   check: '<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  boxOpen: '<svg viewBox="0 0 24 24" fill="none"><path d="M3 9.5 12 5l9 4.5M3 9.5v9L12 23l9-4.5v-9M3 9.5 12 14l9-4.5M12 14v9" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>'
+  boxOpen: '<svg viewBox="0 0 24 24" fill="none"><path d="M3 9.5 12 5l9 4.5M3 9.5v9L12 23l9-4.5v-9M3 9.5 12 14l9-4.5M12 14v9" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+  building: '<svg viewBox="0 0 24 24" fill="none"><path d="M4 21V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v16M12 21v-9a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v9M4 21h17M7 7h1M7 11h1M7 15h1M15 13h1M15 17h1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 };
 
 function esc(s){ return (s||'').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -335,31 +367,50 @@ function closeModal(id){
   if(id==='adminOverlay'){ document.getElementById('newPassInput').value=''; document.getElementById('newPassInput2').value=''; document.getElementById('adminError').classList.remove('show'); }
 }
 
-/* ---------- storage ---------- */
-async function loadData(){
-  try{
-    const res = await window.storage.get(DEVICES_KEY, true);
-    devices = res && res.value ? JSON.parse(res.value) : [];
-  }catch(e){ devices = []; }
-  try{
-    const res = await window.storage.get(SETTINGS_KEY, true);
-    settings = res && res.value ? JSON.parse(res.value) : { password: DEFAULT_PASSWORD };
-  }catch(e){
-    settings = { password: DEFAULT_PASSWORD };
-    try{ await window.storage.set(SETTINGS_KEY, JSON.stringify(settings), true); }catch(err){}
-  }
-  renderAll();
+/* ---------- storage (Firebase Firestore) ---------- */
+function loadData(){
+  document.getElementById('listArea').innerHTML = '<div class="loading">Conectando ao Firebase...</div>';
+  carregarConfiguracoes();
+  assinarDispositivos();
 }
 
-async function persistDevices(){
+async function carregarConfiguracoes(){
   try{
-    const r = await window.storage.set(DEVICES_KEY, JSON.stringify(devices), true);
-    if(!r) throw new Error('sem resposta');
-    return true;
+    const snap = await getDoc(settingsRef);
+    if(snap.exists()){
+      settings = snap.data();
+      if(!settings.password) settings.password = DEFAULT_PASSWORD;
+    } else {
+      settings = { password: DEFAULT_PASSWORD };
+      await setDoc(settingsRef, settings);
+    }
   }catch(e){
-    showToast('Não foi possível salvar. Tente novamente.', true);
-    return false;
+    console.error('Erro ao carregar configurações do Firebase:', e);
+    settings = { password: DEFAULT_PASSWORD };
   }
+}
+
+function assinarDispositivos(){
+  onSnapshot(devicesCol, snapshot=>{
+    devices = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    dadosCarregados = true;
+    renderAll();
+  }, err=>{
+    console.error('Erro ao sincronizar com o Firebase:', err);
+    dadosCarregados = false;
+    document.getElementById('listArea').innerHTML = `<div class="empty">${ICONS.boxOpen}<h3>Não foi possível conectar ao Firebase</h3><p>Verifique a conexão com a internet e as regras de segurança do Firestore no projeto "qualidadenors-eed75".</p></div>`;
+    showToast('Erro ao conectar ao banco de dados.', true);
+  });
+}
+
+async function salvarDispositivoNoBanco(id, data){
+  await setDoc(doc(devicesCol, id), data);
+}
+async function excluirDispositivoNoBanco(id){
+  await deleteDoc(doc(devicesCol, id));
+}
+async function salvarSenhaNoBanco(pwd){
+  await setDoc(settingsRef, { password: pwd }, { merge: true });
 }
 
 /* ---------- render ---------- */
@@ -409,6 +460,10 @@ function renderList(){
   }).sort((a,b)=> (a.colaborador||'').localeCompare(b.colaborador||''));
 
   const area = document.getElementById('listArea');
+  if(!dadosCarregados){
+    area.innerHTML = '<div class="loading">Conectando ao Firebase...</div>';
+    return;
+  }
   if(devices.length===0){
     area.innerHTML = `<div class="empty">${ICONS.boxOpen}<h3>Nenhum dispositivo cadastrado</h3><p>Clique em "Novo dispositivo" para adicionar o primeiro celular ou tablet ao controle.</p></div>`;
     return;
@@ -418,24 +473,43 @@ function renderList(){
     return;
   }
 
+  // agrupa por filial: visualização por filial disponível para todos, sem senha
+  const grupos = {};
+  filtered.forEach(d=>{
+    const chave = (d.filial && d.filial.trim()) ? d.filial.trim() : 'Sem filial definida';
+    (grupos[chave] = grupos[chave] || []).push(d);
+  });
+  const nomesFiliais = Object.keys(grupos).sort((a,b)=> a.localeCompare(b,'pt-BR'));
+
   const head = `<div class="list-head"><span></span><span>Colaborador</span><span>Contato</span><span>Modelo</span><span>Filial</span><span>Setor</span><span></span></div>`;
-  const rows = filtered.map(d=>{
-    const chipClass = d.tipo==='Tablet' ? 'tablet' : 'celular';
-    const icon = d.tipo==='Tablet' ? ICONS.tablet : ICONS.phone;
-    return `<div class="row">
-      <span class="type-chip ${chipClass}">${icon}${esc(d.tipo)}</span>
-      <div><div class="cell-value">${esc(d.colaborador)||'—'}</div></div>
-      <div><div class="cell-value sub">${esc(d.contato)||'—'}</div></div>
-      <div><div class="cell-value">${esc(d.modelo)||'—'}</div><div class="cell-value imei mono">${esc(d.imei)||'sem IMEI'}</div></div>
-      <div><div class="cell-value sub">${esc(d.filial)||'—'}</div></div>
-      <div><div class="cell-value sub">${esc(d.setor)||'—'}</div></div>
-      <div class="row-actions">
-        <button class="icon-btn" title="Editar" onclick="requestAction('edit','${d.id}')">${unlocked ? ICONS.edit : ICONS.lock}</button>
-        <button class="icon-btn danger" title="Excluir" onclick="requestAction('delete','${d.id}')">${unlocked ? ICONS.trash : ICONS.lock}</button>
+
+  area.innerHTML = nomesFiliais.map(nome=>{
+    const itens = grupos[nome];
+    const rows = itens.map(d=>{
+      const chipClass = d.tipo==='Tablet' ? 'tablet' : 'celular';
+      const icon = d.tipo==='Tablet' ? ICONS.tablet : ICONS.phone;
+      return `<div class="row">
+        <span class="type-chip ${chipClass}">${icon}${esc(d.tipo)}</span>
+        <div><div class="cell-value">${esc(d.colaborador)||'—'}</div></div>
+        <div><div class="cell-value sub">${esc(d.contato)||'—'}</div></div>
+        <div><div class="cell-value">${esc(d.modelo)||'—'}</div><div class="cell-value imei mono">${esc(d.imei)||'sem IMEI'}</div></div>
+        <div><div class="cell-value sub">${esc(d.filial)||'—'}</div></div>
+        <div><div class="cell-value sub">${esc(d.setor)||'—'}</div></div>
+        <div class="row-actions">
+          <button class="icon-btn" title="Editar" onclick="requestAction('edit','${d.id}')">${unlocked ? ICONS.edit : ICONS.lock}</button>
+          <button class="icon-btn danger" title="Excluir" onclick="requestAction('delete','${d.id}')">${unlocked ? ICONS.trash : ICONS.lock}</button>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="filial-group">
+      <div class="filial-head">
+        <span class="filial-name">${ICONS.building}${esc(nome)}</span>
+        <span class="filial-count">${itens.length} dispositivo${itens.length>1?'s':''}</span>
       </div>
+      ${head}
+      <div class="list">${rows}</div>
     </div>`;
   }).join('');
-  area.innerHTML = head + '<div class="list">' + rows + '</div>';
 }
 
 /* ---------- auth ---------- */
@@ -483,15 +557,17 @@ async function changePassword(){
   const p1 = document.getElementById('newPassInput').value;
   const p2 = document.getElementById('newPassInput2').value;
   const err = document.getElementById('adminError');
+  err.classList.remove('show');
   if(p1.length < 4){ err.textContent='A senha precisa ter ao menos 4 caracteres.'; err.classList.add('show'); return; }
   if(p1 !== p2){ err.textContent='As senhas não coincidem.'; err.classList.add('show'); return; }
-  settings.password = p1;
   try{
-    await window.storage.set(SETTINGS_KEY, JSON.stringify(settings), true);
+    await salvarSenhaNoBanco(p1);
+    settings.password = p1;
     closeModal('adminOverlay');
     showToast('Senha de edição atualizada.');
   }catch(e){
-    err.textContent = 'Não foi possível salvar a nova senha. Tente novamente.';
+    console.error(e);
+    err.textContent = 'Não foi possível salvar a nova senha no Firebase. Tente novamente.';
     err.classList.add('show');
   }
 }
@@ -530,12 +606,14 @@ async function saveDevice(){
   const modelo = document.getElementById('f_modelo').value.trim();
   const imei = document.getElementById('f_imei').value.trim();
   const err = document.getElementById('deviceError');
+  err.classList.remove('show');
 
   if(!colaborador || !modelo){
     err.textContent = 'Preencha ao menos o colaborador e o modelo.';
     err.classList.add('show');
     return;
   }
+  const existente = editingId ? devices.find(x=>x.id===editingId) : null;
   const data = {
     tipo: document.getElementById('f_tipo').value,
     colaborador,
@@ -544,27 +622,30 @@ async function saveDevice(){
     imei,
     filial: document.getElementById('f_filial').value.trim(),
     setor: document.getElementById('f_setor').value.trim(),
+    criadoEm: existente && existente.criadoEm ? existente.criadoEm : new Date().toISOString(),
   };
+  const id = editingId || ('dev_'+Date.now()+'_'+Math.random().toString(36).slice(2,7));
 
-  if(editingId){
-    const idx = devices.findIndex(x=>x.id===editingId);
-    if(idx>-1) devices[idx] = {...devices[idx], ...data};
-  } else {
-    devices.push({ id: 'dev_'+Date.now()+'_'+Math.random().toString(36).slice(2,7), criadoEm: new Date().toISOString(), ...data });
+  try{
+    await salvarDispositivoNoBanco(id, data);
+    closeModal('deviceOverlay');
+    showToast(editingId ? 'Dispositivo atualizado.' : 'Dispositivo adicionado.');
+    // a lista é atualizada automaticamente pelo listener em tempo real do Firestore
+  }catch(e){
+    console.error(e);
+    err.textContent = 'Não foi possível salvar no Firebase. Verifique a conexão e as regras do Firestore.';
+    err.classList.add('show');
   }
-  const ok = await persistDevices();
-  if(!ok) return;
-  closeModal('deviceOverlay');
-  renderAll();
-  showToast(editingId ? 'Dispositivo atualizado.' : 'Dispositivo adicionado.');
 }
 function confirmDelete(id){
   const d = devices.find(x=>x.id===id);
   if(!d) return;
   if(!window.confirm('Excluir o dispositivo de "'+d.colaborador+'" ('+d.modelo+')? Essa ação não pode ser desfeita.')) return;
-  devices = devices.filter(x=>x.id!==id);
-  persistDevices().then(ok=>{
-    if(ok){ renderAll(); showToast('Dispositivo excluído.'); }
+  excluirDispositivoNoBanco(id).then(()=>{
+    showToast('Dispositivo excluído.');
+  }).catch(e=>{
+    console.error(e);
+    showToast('Não foi possível excluir no Firebase. Tente novamente.', true);
   });
 }
 
@@ -589,6 +670,21 @@ function exportExcel(){
   XLSX.writeFile(wb, 'controle-dispositivos-'+dateStr+'.xlsx');
   showToast('Planilha exportada com sucesso.');
 }
+
+// Como o script é type="module", as funções não ficam globais por padrão.
+// Expomos aqui as que são chamadas diretamente pelos atributos onclick/oninput/onchange do HTML.
+Object.assign(window, {
+  onAuthBadgeClick,
+  exportExcel,
+  openAddModal,
+  renderList,
+  closeModal,
+  saveDevice,
+  confirmPassword,
+  changePassword,
+  openPasswordChangeFlow,
+  requestAction
+});
 
 loadData();
 </script>
