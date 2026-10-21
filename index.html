@@ -6,6 +6,9 @@
 <title>Controle de Dispositivos · Frota Móvel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script>
+  (function(){ try{ var t=localStorage.getItem('tema-frota'); if(t==='light'||t==='dark') document.documentElement.setAttribute('data-theme',t); }catch(e){} })();
+</script>
 <style>
   :root{
     --bg:#10141B;
@@ -29,6 +32,39 @@
     --radius-sm:9px;
     --shadow:0 1px 2px rgba(0,0,0,0.2), 0 12px 28px -14px rgba(0,0,0,0.55);
   }
+  :root[data-theme="light"]{
+    --bg:#F3F5F8;
+    --surface:#FFFFFF;
+    --surface-raised:#F6F8FB;
+    --surface-hover:#E9EDF3;
+    --line:#D8DEE8;
+    --line-soft:#E8ECF2;
+    --ink:#161B24;
+    --ink-soft:#4F5B6D;
+    --ink-faint:#7C8798;
+    --accent:#D98512;
+    --accent-ink:#FFFFFF;
+    --accent-soft:rgba(217,133,18,0.12);
+    --accent-dim:rgba(217,133,18,0.30);
+    --teal:#0E9F78;
+    --teal-soft:rgba(14,159,120,0.12);
+    --danger:#D93A31;
+    --danger-soft:rgba(217,58,49,0.10);
+    --shadow:0 1px 2px rgba(16,24,40,0.06), 0 10px 24px -14px rgba(16,24,40,0.18);
+    color-scheme:light;
+  }
+  :root:not([data-theme="light"]){color-scheme:dark;}
+  :root[data-theme="light"] .btn-primary:hover{background:#E8941F;}
+  :root[data-theme="light"] .btn-danger:hover{background:rgba(217,58,49,0.18);}
+  :root[data-theme="light"] .modal{box-shadow:0 24px 70px rgba(16,24,40,.22);}
+  :root[data-theme="light"] .overlay{background:rgba(30,38,52,.35);}
+  :root[data-theme="light"] .toast{box-shadow:0 14px 34px rgba(16,24,40,.2);}
+  :root[data-theme="light"] .toast.danger{color:#fff;}
+  :root[data-theme="light"] .rail-mark{box-shadow:0 6px 16px -6px rgba(217,133,18,0.45);}
+  .btn-theme{display:flex;align-items:center;justify-content:center;gap:7px;font-size:12.5px;padding:9px 12px;border-radius:999px;background:var(--surface-raised);border:1px solid var(--line);color:var(--ink-soft);cursor:pointer;font-weight:600;transition:.15s;width:100%;font-family:inherit;}
+  .btn-theme:hover{border-color:var(--ink-faint);color:var(--ink);}
+  .btn-theme svg{width:14px;height:14px;flex-shrink:0;}
+  body,.rail,.card,.kpi,.toolbar,.modal{transition:background-color .2s,border-color .2s,color .2s;}
   *{box-sizing:border-box;}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
   h1,h2,h3,.display{font-family:'Big Shoulders Display',sans-serif;text-transform:none;}
@@ -187,7 +223,7 @@
     .rail-node .label{white-space:nowrap;font-size:11.5px;}
     .rail-node .count{display:none;}
     .rail-foot{flex-direction:row;margin-top:0;margin-left:auto;flex-shrink:0;}
-    .badge-auth{width:auto;}
+    .badge-auth,.btn-theme{width:auto;}
     .rail-admin{display:none;}
     .main{padding:20px 16px 60px;}
     .kpis{grid-template-columns:repeat(2,1fr);}
@@ -216,6 +252,7 @@
     </nav>
 
     <div class="rail-foot">
+      <button class="btn-theme" id="themeBtn" onclick="toggleTheme()" title="Alternar tema claro/escuro"></button>
       <button class="badge-auth" id="authBadge" onclick="onAuthBadgeClick()"></button>
       <button class="rail-admin" onclick="openPasswordChangeFlow()">Área administrativa</button>
     </div>
@@ -390,7 +427,7 @@ const settingsRef = doc(db, 'configuracoes', 'admin');
 const DEFAULT_PASSWORD = 'admin123';
 
 // Filiais fixas da empresa
-const FILIAIS = ['Cuiabá','Sinop','Rondonópolis','Vilhena','Porto Velho'];
+const FILIAIS = ['MATRIZ','Cuiabá','Sinop','Rondonópolis','Vilhena','Porto Velho'];
 
 let devices = [];
 let settings = { password: DEFAULT_PASSWORD };
@@ -410,6 +447,23 @@ const ICONS = {
   check: '<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   boxOpen: '<svg viewBox="0 0 24 24" fill="none"><path d="M3 9.5 12 5l9 4.5M3 9.5v9L12 23l9-4.5v-9M3 9.5 12 14l9-4.5M12 14v9" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>'
 };
+
+/* ---------- tema claro / escuro ---------- */
+ICONS.sun = '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+ICONS.moon = '<svg viewBox="0 0 24 24" fill="none"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';
+function currentTheme(){ return document.documentElement.getAttribute('data-theme')==='light' ? 'light' : 'dark'; }
+function updateThemeBtn(){
+  const b = document.getElementById('themeBtn');
+  if(!b) return;
+  const light = currentTheme()==='light';
+  b.innerHTML = (light ? ICONS.moon : ICONS.sun) + '<span>' + (light ? 'Tema escuro' : 'Tema claro') + '</span>';
+}
+function toggleTheme(){
+  const next = currentTheme()==='light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  try{ localStorage.setItem('tema-frota', next); }catch(e){}
+  updateThemeBtn();
+}
 
 function esc(s){ return (s||'').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function showToast(msg, isError){
@@ -452,7 +506,14 @@ async function carregarConfiguracoes(){
 
 function assinarDispositivos(){
   onSnapshot(devicesCol, snapshot=>{
-    devices = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Só na exibição: casa o nome da filial ignorando maiúsculas/minúsculas e espaços (ex.: "Matriz" = "MATRIZ"). Nada é gravado no banco.
+    devices = snapshot.docs.map(d => {
+      const obj = { id: d.id, ...d.data() };
+      const nome = (obj.filial||'').toString().trim();
+      const canon = FILIAIS.find(f => f.toLowerCase() === nome.toLowerCase());
+      if(canon) obj.filial = canon;
+      return obj;
+    });
     dadosCarregados = true;
     renderAll();
   }, err=>{
@@ -792,8 +853,11 @@ Object.assign(window, {
   changePassword,
   openPasswordChangeFlow,
   requestAction,
-  selectFilial
+  selectFilial,
+  toggleTheme
 });
+
+updateThemeBtn();
 
 loadData();
 </script>
