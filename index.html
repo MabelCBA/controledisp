@@ -1,0 +1,1943 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Frota Móvel · Controle de Dispositivos</title>
+<meta name="description" content="Controle corporativo de celulares e tablets por filial, setor e colaborador.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script>
+  (function(){ try{ var t=localStorage.getItem('tema-frota'); if(t==='light'||t==='dark') document.documentElement.setAttribute('data-theme',t); }catch(e){} })();
+</script>
+<style>
+  /* =========================================================
+     TOKENS
+     ========================================================= */
+  :root{
+    --bg:#0F131A;
+    --surface:#171C25;
+    --surface-raised:#1E2430;
+    --surface-hover:#262D3A;
+    --line:#2A3140;
+    --line-soft:#1F2531;
+    --ink:#EEF1F5;
+    --ink-soft:#9AA6B6;
+    --ink-faint:#5F6C7D;
+    --accent:#F0A431;
+    --accent-ink:#20140A;
+    --accent-soft:rgba(240,164,49,0.13);
+    --accent-dim:rgba(240,164,49,0.35);
+    --teal:#2FD3A6;
+    --teal-soft:rgba(47,211,166,0.13);
+    --blue:#6EA8FE;
+    --blue-soft:rgba(110,168,254,0.14);
+    --danger:#FF6B62;
+    --danger-soft:rgba(255,107,98,0.13);
+    --warn:#F5C451;
+    --warn-soft:rgba(245,196,81,0.14);
+    --radius:14px;
+    --radius-sm:9px;
+    --shadow:0 1px 2px rgba(0,0,0,0.2), 0 12px 28px -14px rgba(0,0,0,0.55);
+    --shadow-lg:0 24px 70px rgba(0,0,0,.5);
+    color-scheme:dark;
+  }
+  :root[data-theme="light"]{
+    --bg:#F2F4F8;
+    --surface:#FFFFFF;
+    --surface-raised:#F6F8FB;
+    --surface-hover:#E9EDF3;
+    --line:#D8DEE8;
+    --line-soft:#E8ECF2;
+    --ink:#161B24;
+    --ink-soft:#4F5B6D;
+    --ink-faint:#7C8798;
+    --accent:#D98512;
+    --accent-ink:#FFFFFF;
+    --accent-soft:rgba(217,133,18,0.12);
+    --accent-dim:rgba(217,133,18,0.30);
+    --teal:#0E9F78;
+    --teal-soft:rgba(14,159,120,0.12);
+    --blue:#2F6FDB;
+    --blue-soft:rgba(47,111,219,0.10);
+    --danger:#D93A31;
+    --danger-soft:rgba(217,58,49,0.10);
+    --warn:#B7860B;
+    --warn-soft:rgba(183,134,11,0.12);
+    --shadow:0 1px 2px rgba(16,24,40,0.06), 0 10px 24px -14px rgba(16,24,40,0.18);
+    --shadow-lg:0 24px 70px rgba(16,24,40,.22);
+    color-scheme:light;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;font-size:14px;}
+  body,.rail,.card,.kpi,.toolbar,.modal,.panel,.drawer{transition:background-color .2s,border-color .2s,color .2s;}
+  h1,h2,h3,.display{font-family:'Big Shoulders Display',sans-serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  ::selection{background:var(--accent-dim);}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  mark{background:var(--accent-dim);color:inherit;border-radius:3px;padding:0 1px;}
+  button{font-family:inherit;}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+
+  /* =========================================================
+     SHELL & RAIL
+     ========================================================= */
+  .shell{display:grid;grid-template-columns:256px 1fr;min-height:100vh;}
+  .main{padding:28px 34px 80px;max-width:1280px;width:100%;}
+
+  .rail{background:var(--surface);border-right:1px solid var(--line);padding:24px 18px;display:flex;flex-direction:column;gap:24px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+  .rail-brand{display:flex;align-items:center;gap:12px;padding:0 4px;}
+  .rail-mark{width:40px;height:40px;border-radius:10px;background:linear-gradient(155deg,var(--accent),#C97F1E);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 6px 16px -6px rgba(240,164,49,0.5);}
+  .rail-mark svg{width:21px;height:21px;}
+  .rail-brand-text strong{display:block;font-family:'Big Shoulders Display',sans-serif;font-size:20px;font-weight:700;line-height:1.1;}
+  .rail-brand-text span{display:block;font-size:11.5px;color:var(--ink-faint);margin-top:2px;}
+
+  .rail-section-label{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);padding:0 4px;margin-bottom:6px;}
+  .rail-route{position:relative;display:flex;flex-direction:column;}
+  .rail-node{position:relative;display:flex;align-items:center;gap:11px;padding:9px 8px 9px 4px;background:none;border:none;color:var(--ink-soft);font-size:13.5px;font-weight:600;text-align:left;cursor:pointer;border-radius:9px;transition:.15s;}
+  .rail-node:hover{background:var(--surface-hover);color:var(--ink);}
+  .rail-node.active{color:var(--accent);background:var(--accent-soft);}
+  .rail-node .stem{position:relative;width:16px;display:flex;justify-content:center;flex-shrink:0;}
+  .rail-node .stem::before{content:'';position:absolute;top:-9px;bottom:-9px;width:2px;background:var(--line);}
+  .rail-node:first-child .stem::before{top:50%;}
+  .rail-node:last-child .stem::before{bottom:50%;}
+  .rail-node .dot{position:relative;width:9px;height:9px;border-radius:50%;background:var(--ink-faint);border:2px solid var(--surface);z-index:1;transition:.15s;}
+  .rail-node.active .dot{background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+  .rail-node .label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .rail-node .count{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--ink-faint);background:var(--surface-raised);padding:2px 7px;border-radius:999px;}
+  .rail-node.active .count{color:var(--accent-ink);background:var(--accent);}
+
+  .rail-shortcuts{font-size:11.5px;color:var(--ink-faint);display:flex;flex-direction:column;gap:6px;padding:0 4px;}
+  .rail-shortcuts div{display:flex;justify-content:space-between;align-items:center;}
+  kbd{font-family:'JetBrains Mono',monospace;font-size:10.5px;padding:2px 6px;border-radius:5px;border:1px solid var(--line);background:var(--surface-raised);color:var(--ink-soft);}
+
+  .rail-foot{margin-top:auto;display:flex;flex-direction:column;gap:8px;}
+  .pill-btn{display:flex;align-items:center;justify-content:center;gap:7px;font-size:12.5px;padding:9px 12px;border-radius:999px;background:var(--surface-raised);border:1px solid var(--line);color:var(--ink-soft);cursor:pointer;font-weight:600;transition:.15s;width:100%;}
+  .pill-btn:hover{border-color:var(--ink-faint);color:var(--ink);}
+  .pill-btn svg{width:14px;height:14px;flex-shrink:0;}
+  .pill-btn.on{background:var(--teal-soft);color:var(--teal);border-color:transparent;}
+  .rail-admin{background:none;border:none;color:var(--ink-faint);font-size:11.5px;cursor:pointer;text-decoration:underline;padding:4px;}
+  .rail-admin:hover{color:var(--ink-soft);}
+
+  /* =========================================================
+     HEADER
+     ========================================================= */
+  header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:24px;flex-wrap:wrap;}
+  .crumbs{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-faint);font-weight:600;margin-bottom:6px;}
+  .crumbs button{background:none;border:none;padding:0;color:var(--ink-soft);font-weight:600;cursor:pointer;font-size:12px;}
+  .crumbs button:hover{color:var(--accent);}
+  header.top h1{font-size:32px;margin:0;font-weight:700;letter-spacing:-0.01em;line-height:1.05;}
+  .subline{margin:8px 0 0;color:var(--ink-soft);font-size:13.5px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .live{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--surface-raised);border:1px solid var(--line);color:var(--ink-soft);}
+  .live i{width:7px;height:7px;border-radius:50%;background:var(--ink-faint);}
+  .live.ok i{background:var(--teal);box-shadow:0 0 0 0 var(--teal);animation:pulse 2s infinite;}
+  .live.err{color:var(--danger);}
+  .live.err i{background:var(--danger);}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(47,211,166,.55);}70%{box-shadow:0 0 0 7px rgba(47,211,166,0);}100%{box-shadow:0 0 0 0 rgba(47,211,166,0);}}
+  .top-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+
+  /* =========================================================
+     BUTTONS
+     ========================================================= */
+  .btn{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:13.5px;padding:10px 16px;border-radius:10px;border:1px solid transparent;cursor:pointer;transition:.15s;white-space:nowrap;}
+  .btn svg{width:15px;height:15px;flex-shrink:0;}
+  .btn-primary{background:var(--accent);color:var(--accent-ink);}
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-ghost{background:var(--surface-raised);color:var(--ink);border-color:var(--line);}
+  .btn-ghost:hover{border-color:var(--ink-faint);}
+  .btn-danger{background:var(--danger);color:#fff;}
+  .btn-danger:hover{filter:brightness(1.08);}
+  .btn-soft-danger{background:var(--danger-soft);color:var(--danger);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .btn-sm{padding:7px 11px;font-size:12.5px;border-radius:8px;}
+  .icon-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:var(--surface-raised);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);transition:.15s;flex-shrink:0;}
+  .icon-btn svg{width:15px;height:15px;}
+  .icon-btn:hover{border-color:var(--ink-faint);color:var(--ink);}
+  .icon-btn.danger:hover{background:var(--danger-soft);color:var(--danger);border-color:transparent;}
+  .icon-btn.sm{width:26px;height:26px;border-radius:7px;}
+  .icon-btn.sm svg{width:13px;height:13px;}
+
+  /* dropdown */
+  .menu-wrap{position:relative;}
+  .menu{position:absolute;right:0;top:calc(100% + 6px);min-width:250px;background:var(--surface-raised);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-lg);padding:6px;z-index:40;display:none;}
+  .menu.show{display:block;animation:pop .14s ease;}
+  @keyframes pop{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
+  .menu button{display:flex;align-items:flex-start;gap:10px;width:100%;padding:9px 10px;border-radius:8px;border:none;background:none;color:var(--ink);cursor:pointer;text-align:left;font-size:13px;font-weight:600;}
+  .menu button:hover{background:var(--surface-hover);}
+  .menu button svg{width:16px;height:16px;color:var(--ink-soft);margin-top:1px;flex-shrink:0;}
+  .menu button small{display:block;font-weight:500;color:var(--ink-faint);font-size:11.5px;margin-top:2px;}
+  .menu hr{border:none;border-top:1px solid var(--line);margin:5px 4px;}
+
+  /* =========================================================
+     KPIs
+     ========================================================= */
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px;}
+  .kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+  .kpi .lbl{font-size:11px;color:var(--ink-faint);font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:7px;}
+  .kpi .lbl svg{width:14px;height:14px;}
+  .kpi .num{font-family:'Big Shoulders Display',sans-serif;font-size:34px;font-weight:700;line-height:1;color:var(--ink);margin-top:10px;font-variant-numeric:tabular-nums;}
+  .kpi .num .of{font-size:17px;color:var(--ink-faint);font-weight:600;}
+  .kpi .sub{margin-top:8px;font-size:12px;color:var(--ink-soft);}
+  .kpi .meter{margin-top:10px;height:4px;border-radius:99px;background:var(--line-soft);overflow:hidden;}
+  .kpi .meter span{display:block;height:100%;border-radius:99px;transition:width .5s ease;}
+  .kpi.accent .num{color:var(--accent);} .kpi.accent .meter span{background:var(--accent);}
+  .kpi.teal .num{color:var(--teal);}   .kpi.teal .meter span{background:var(--teal);}
+  .kpi.blue .meter span{background:var(--blue);}
+  .kpi.warn .num{color:var(--warn);}
+  .kpi.clickable{cursor:pointer;}
+  .kpi.clickable:hover{border-color:var(--ink-faint);}
+
+  /* =========================================================
+     INSIGHTS
+     ========================================================= */
+  .insights-head{display:flex;align-items:center;justify-content:space-between;margin:6px 2px 10px;}
+  .insights-head h2{margin:0;font-size:18px;font-weight:700;}
+  .link-btn{background:none;border:none;color:var(--ink-soft);font-size:12.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:4px 6px;border-radius:6px;}
+  .link-btn:hover{color:var(--ink);background:var(--surface-hover);}
+  .link-btn svg{width:14px;height:14px;transition:transform .2s;}
+  .insights{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:12px;margin-bottom:22px;}
+  .insights.collapsed{display:none;}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);min-width:0;}
+  .panel h3{margin:0 0 3px;font-size:15.5px;font-weight:700;}
+  .panel .panel-sub{font-size:12px;color:var(--ink-faint);margin-bottom:14px;}
+
+  .bars{display:flex;flex-direction:column;gap:7px;}
+  .bar-row{display:grid;grid-template-columns:104px 1fr 34px;align-items:center;gap:10px;background:none;border:none;padding:4px 6px;margin:0 -6px;border-radius:7px;cursor:pointer;color:var(--ink-soft);text-align:left;font-size:12.5px;font-weight:600;}
+  .bar-row:hover{background:var(--surface-hover);color:var(--ink);}
+  .bar-row.active{color:var(--accent);background:var(--accent-soft);}
+  .bar-row .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .bar-track{height:10px;border-radius:99px;background:var(--line-soft);display:flex;overflow:hidden;}
+  .bar-track span{height:100%;transition:width .5s ease;}
+  .bar-track .c{background:var(--accent);}
+  .bar-track .t{background:var(--teal);}
+  .bar-row .n{font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right;color:var(--ink);}
+  .legend{display:flex;gap:14px;margin-top:12px;font-size:11.5px;color:var(--ink-soft);font-weight:600;flex-wrap:wrap;}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;vertical-align:-1px;}
+
+  .donut-wrap{display:flex;align-items:center;gap:18px;}
+  .donut{position:relative;width:118px;height:118px;flex-shrink:0;}
+  .donut svg{width:100%;height:100%;transform:rotate(-90deg);}
+  .donut circle{fill:none;stroke-width:13;transition:stroke-dasharray .5s ease, stroke-dashoffset .5s ease;}
+  .donut .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .donut .center b{font-family:'Big Shoulders Display',sans-serif;font-size:28px;line-height:1;}
+  .donut .center span{font-size:10.5px;color:var(--ink-faint);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:3px;}
+  .stat-list{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0;}
+  .stat-item{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;font-weight:600;color:var(--ink-soft);background:none;border:none;padding:5px 7px;margin:0 -7px;border-radius:7px;cursor:pointer;text-align:left;}
+  .stat-item:hover{background:var(--surface-hover);color:var(--ink);}
+  .stat-item.active{background:var(--accent-soft);color:var(--accent);}
+  .stat-item .l{display:flex;align-items:center;gap:8px;min-width:0;}
+  .stat-item .l i{width:9px;height:9px;border-radius:3px;flex-shrink:0;}
+  .stat-item .r{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--ink);}
+  .stat-item .r small{color:var(--ink-faint);margin-left:4px;}
+  .divider{border-top:1px solid var(--line-soft);margin:12px 0;}
+
+  .health{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+  .health-score{font-family:'Big Shoulders Display',sans-serif;font-size:34px;font-weight:700;line-height:1;}
+  .health-score small{font-size:16px;color:var(--ink-faint);}
+  .health-txt{font-size:12px;color:var(--ink-soft);line-height:1.4;}
+  .issue-count{font-family:'JetBrains Mono',monospace;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--surface-raised);color:var(--ink-soft);}
+  .issue-count.bad{background:var(--warn-soft);color:var(--warn);}
+
+  /* =========================================================
+     TOOLBAR
+     ========================================================= */
+  .toolbar{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px;margin-bottom:14px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;position:sticky;top:10px;z-index:20;}
+  .toolbar-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .search-wrap{position:relative;flex:1;min-width:220px;}
+  .search-wrap > svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--ink-faint);pointer-events:none;}
+  .search-wrap input{width:100%;padding:9px 60px 9px 36px;border-radius:9px;border:1px solid var(--line);font-size:13.5px;background:var(--surface-raised);color:var(--ink);font-family:inherit;}
+  .search-wrap input::placeholder{color:var(--ink-faint);}
+  .search-wrap kbd{position:absolute;right:10px;top:50%;transform:translateY(-50%);}
+  .search-wrap .clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:none;}
+  .search-wrap.has-value kbd{display:none;}
+  .search-wrap.has-value .clear{display:inline-flex;}
+  select, input, textarea{font-family:inherit;color:var(--ink);}
+  select{padding:9px 30px 9px 12px;border-radius:9px;border:1px solid var(--line);font-size:13px;background:var(--surface-raised) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238892a2' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center/14px;color:var(--ink);appearance:none;-webkit-appearance:none;cursor:pointer;font-weight:500;}
+  select:focus, input:focus, textarea:focus{outline:2px solid var(--accent);outline-offset:1px;}
+
+  .seg{display:inline-flex;background:var(--surface-raised);border:1px solid var(--line);border-radius:9px;padding:3px;gap:2px;}
+  .seg button{border:none;background:none;color:var(--ink-soft);font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+  .seg button svg{width:14px;height:14px;}
+  .seg button:hover{color:var(--ink);}
+  .seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.25);}
+  :root[data-theme="light"] .seg button.on{box-shadow:0 1px 3px rgba(16,24,40,.12);}
+
+  .chips{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--ink-soft);}
+  .chips .count-txt{font-weight:600;margin-right:4px;}
+  .chips .count-txt b{color:var(--ink);font-variant-numeric:tabular-nums;}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 6px 4px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:600;font-size:12px;border:none;cursor:pointer;}
+  .chip svg{width:12px;height:12px;}
+  .chip:hover{filter:brightness(1.15);}
+  .chip-clear{background:none;border:none;color:var(--ink-faint);font-size:12px;font-weight:600;cursor:pointer;text-decoration:underline;}
+  .chip-clear:hover{color:var(--ink);}
+
+  /* =========================================================
+     CARDS
+     ========================================================= */
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(278px,1fr));gap:12px;}
+  .card{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 17px;box-shadow:var(--shadow);animation:rise .28s ease both;transition:border-color .15s, transform .15s;cursor:pointer;display:flex;flex-direction:column;}
+  .card:hover{border-color:var(--ink-faint);transform:translateY(-1px);}
+  .card.off{opacity:.62;}
+  @keyframes rise{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px;}
+  .chips-row{display:flex;gap:6px;flex-wrap:wrap;}
+  .type-chip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;padding:5px 9px;border-radius:999px;width:fit-content;white-space:nowrap;}
+  .type-chip svg{width:12px;height:12px;}
+  .type-chip.celular{background:var(--accent-soft);color:var(--accent);}
+  .type-chip.tablet{background:var(--teal-soft);color:var(--teal);}
+  .status{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;padding:5px 9px;border-radius:999px;white-space:nowrap;}
+  .status::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;}
+  .status.ok{background:var(--teal-soft);color:var(--teal);}
+  .status.info{background:var(--blue-soft);color:var(--blue);}
+  .status.warn{background:var(--warn-soft);color:var(--warn);}
+  .status.off{background:var(--danger-soft);color:var(--danger);}
+  .card-actions{display:flex;gap:6px;}
+  .avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12.5px;flex-shrink:0;color:#fff;letter-spacing:.02em;}
+  .card-person{display:flex;align-items:center;gap:11px;margin-bottom:12px;min-width:0;}
+  .card-person > div{min-width:0;}
+  .card-name{font-size:15px;font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .card-sub{font-size:12.5px;color:var(--ink-soft);margin-top:1px;}
+  .card-meta{display:flex;flex-direction:column;gap:6px;padding-top:11px;border-top:1px solid var(--line-soft);margin-top:auto;}
+  .card-meta-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12.5px;}
+  .card-meta-row .k{color:var(--ink-faint);font-weight:600;}
+  .card-meta-row .v{color:var(--ink-soft);font-weight:500;text-align:right;display:flex;align-items:center;gap:6px;min-width:0;}
+  .card-meta-row .v.mono{font-family:'JetBrains Mono',monospace;font-size:11.5px;letter-spacing:.02em;}
+  .flag{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;background:var(--warn-soft);color:var(--warn);flex-shrink:0;}
+  .flag svg{width:11px;height:11px;}
+  .setor-tag{display:inline-block;font-size:11px;font-weight:600;color:var(--ink-soft);background:var(--surface-raised);padding:3px 9px;border-radius:999px;}
+
+  .filial-group{margin-bottom:26px;}
+  .filial-group:last-child{margin-bottom:0;}
+  .filial-head{display:flex;align-items:center;gap:10px;padding:2px 2px 12px;}
+  .filial-head .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;}
+  .filial-head .filial-name{font-family:'Big Shoulders Display',sans-serif;font-size:19px;font-weight:700;color:var(--ink);background:none;border:none;padding:0;cursor:pointer;}
+  .filial-head .filial-name:hover{color:var(--accent);}
+  .filial-head .mini{font-size:11.5px;color:var(--ink-faint);font-weight:600;}
+  .filial-head .filial-count{font-size:11px;font-weight:700;color:var(--ink-faint);background:var(--surface-raised);padding:4px 10px;border-radius:999px;margin-left:auto;}
+
+  /* =========================================================
+     TABLE
+     ========================================================= */
+  .table-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:auto;}
+  table.grid{width:100%;border-collapse:collapse;font-size:13px;min-width:960px;}
+  table.grid th{position:sticky;top:0;background:var(--surface-raised);text-align:left;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);padding:0;border-bottom:1px solid var(--line);white-space:nowrap;z-index:1;}
+  table.grid th button{all:unset;display:flex;align-items:center;gap:5px;padding:11px 12px;cursor:pointer;width:100%;box-sizing:border-box;}
+  table.grid th button:hover{color:var(--ink);}
+  table.grid th button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;}
+  table.grid th.sorted button{color:var(--accent);}
+  table.grid th svg{width:12px;height:12px;}
+  table.grid th.nosort{padding:11px 12px;}
+  table.grid td{padding:10px 12px;border-bottom:1px solid var(--line-soft);color:var(--ink-soft);vertical-align:middle;}
+  table.grid tbody tr{cursor:pointer;transition:background .12s;}
+  table.grid tbody tr:hover{background:var(--surface-hover);}
+  table.grid tbody tr:last-child td{border-bottom:none;}
+  table.grid td.strong{color:var(--ink);font-weight:600;}
+  table.grid td .who{display:flex;align-items:center;gap:9px;}
+  table.grid td .avatar{width:28px;height:28px;font-size:11px;}
+  table.grid td.mono{font-family:'JetBrains Mono',monospace;font-size:12px;}
+  table.grid td.actions{text-align:right;white-space:nowrap;}
+  table.grid td.actions .icon-btn{margin-left:4px;}
+
+  /* =========================================================
+     EMPTY / LOADING
+     ========================================================= */
+  .empty{text-align:center;padding:60px 20px;background:var(--surface);border:1px dashed var(--line);border-radius:var(--radius);color:var(--ink-soft);}
+  .empty svg{width:40px;height:40px;color:var(--ink-faint);margin-bottom:12px;}
+  .empty h3{margin:0 0 6px;color:var(--ink);font-size:18px;font-weight:700;}
+  .empty p{margin:0 auto;font-size:13.5px;max-width:460px;line-height:1.5;}
+  .empty .btn{margin-top:16px;}
+  .skeleton{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);height:178px;position:relative;overflow:hidden;}
+  .skeleton::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);animation:shimmer 1.3s infinite;}
+  :root[data-theme="light"] .skeleton::after{background:linear-gradient(90deg,transparent,rgba(16,24,40,.05),transparent);}
+  @keyframes shimmer{from{transform:translateX(-100%);}to{transform:translateX(100%);}}
+
+  /* =========================================================
+     MODALS
+     ========================================================= */
+  .overlay{position:fixed;inset:0;background:rgba(6,8,12,.6);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:60;padding:20px;}
+  :root[data-theme="light"] .overlay{background:rgba(30,38,52,.35);}
+  .overlay.show{display:flex;animation:fade .15s ease;}
+  @keyframes fade{from{opacity:0;}to{opacity:1;}}
+  .modal{background:var(--surface-raised);border:1px solid var(--line);border-radius:16px;width:100%;max-width:560px;box-shadow:var(--shadow-lg);max-height:92vh;overflow-y:auto;animation:pop .18s ease;}
+  .modal-head{padding:20px 22px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+  .modal-head h2{margin:0;font-size:21px;font-weight:700;}
+  .modal-head p{margin:3px 0 0;font-size:12.5px;color:var(--ink-faint);}
+  .modal-close{background:none;border:none;cursor:pointer;color:var(--ink-faint);padding:4px;border-radius:6px;}
+  .modal-close svg{width:18px;height:18px;display:block;}
+  .modal-close:hover{color:var(--ink);background:var(--surface-hover);}
+  .modal-body{padding:18px 22px;}
+  .modal-foot{padding:14px 22px 20px;display:flex;justify-content:flex-end;gap:10px;align-items:center;}
+  .modal-foot .spacer{flex:1;}
+  .form-section{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);margin:4px 0 10px;display:flex;align-items:center;gap:10px;}
+  .form-section::after{content:'';flex:1;height:1px;background:var(--line);}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12.5px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;}
+  .field label .req{color:var(--accent);}
+  .field input, .field select, .field textarea{width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--line);font-size:14px;background-color:var(--surface);}
+  .field textarea{resize:vertical;min-height:70px;line-height:1.45;}
+  .field input:focus, .field select:focus, .field textarea:focus{background-color:var(--surface-hover);}
+  .field.invalid input{border-color:var(--danger);}
+  .field input::-webkit-calendar-picker-indicator{opacity:0;}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .seg-field{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .seg-field button{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-weight:600;font-size:13.5px;cursor:pointer;}
+  .seg-field button svg{width:17px;height:17px;}
+  .seg-field button.on[data-v="Celular"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);}
+  .seg-field button.on[data-v="Tablet"]{border-color:var(--teal);background:var(--teal-soft);color:var(--teal);}
+  .field-hint{font-size:11.5px;margin-top:6px;color:var(--ink-faint);display:flex;align-items:center;gap:6px;min-height:16px;}
+  .field-hint svg{width:13px;height:13px;flex-shrink:0;}
+  .field-hint.ok{color:var(--teal);}
+  .field-hint.warn{color:var(--warn);}
+  .field-hint.bad{color:var(--danger);}
+  .hint{font-size:12px;color:var(--ink-faint);margin-top:12px;line-height:1.5;}
+  .error-msg{background:var(--danger-soft);color:var(--danger);font-size:13px;padding:9px 12px;border-radius:8px;margin-bottom:14px;display:none;font-weight:600;line-height:1.45;}
+  .error-msg.show{display:block;}
+  .confirm-icon{width:44px;height:44px;border-radius:12px;background:var(--danger-soft);color:var(--danger);display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+  .confirm-icon svg{width:22px;height:22px;}
+  .confirm-text{font-size:14px;color:var(--ink-soft);line-height:1.55;margin:0;}
+  .confirm-text b{color:var(--ink);}
+
+  .admin-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+  .admin-stats div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;}
+  .admin-stats b{display:block;font-family:'Big Shoulders Display',sans-serif;font-size:22px;}
+  .admin-stats span{font-size:11px;color:var(--ink-faint);font-weight:600;}
+
+  /* =========================================================
+     DRAWER
+     ========================================================= */
+  .drawer-bg{position:fixed;inset:0;background:rgba(6,8,12,.45);z-index:55;opacity:0;pointer-events:none;transition:opacity .2s;}
+  :root[data-theme="light"] .drawer-bg{background:rgba(30,38,52,.25);}
+  .drawer-bg.show{opacity:1;pointer-events:auto;}
+  .drawer{position:fixed;top:0;right:0;bottom:0;width:440px;max-width:100%;background:var(--surface);border-left:1px solid var(--line);z-index:56;transform:translateX(100%);transition:transform .25s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;visibility:hidden;}
+  .drawer.show{transform:none;visibility:visible;box-shadow:var(--shadow-lg);}
+  .drawer-head{padding:20px 22px 16px;border-bottom:1px solid var(--line);}
+  .drawer-head .row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .drawer-person{display:flex;align-items:center;gap:14px;margin-top:14px;}
+  .drawer-person .avatar{width:50px;height:50px;font-size:17px;}
+  .drawer-person h2{margin:0;font-size:24px;font-weight:700;line-height:1.1;}
+  .drawer-person p{margin:3px 0 0;font-size:13px;color:var(--ink-soft);}
+  .drawer-body{padding:18px 22px;overflow-y:auto;flex:1;}
+  .dl{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:18px;}
+  .dl-row{display:grid;grid-template-columns:110px 1fr auto;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line-soft);font-size:13px;}
+  .dl-row:last-child{border-bottom:none;}
+  .dl-row .k{color:var(--ink-faint);font-weight:600;font-size:12px;}
+  .dl-row .v{color:var(--ink);font-weight:500;word-break:break-word;}
+  .dl-row .v.mono{font-family:'JetBrains Mono',monospace;font-size:12.5px;}
+  .drawer h4{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);margin:0 0 10px;}
+  .notes{background:var(--surface-raised);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13px;color:var(--ink-soft);line-height:1.55;white-space:pre-wrap;margin-bottom:18px;}
+  .alerts{display:flex;flex-direction:column;gap:6px;margin-bottom:18px;}
+  .alert{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;padding:9px 12px;border-radius:9px;background:var(--warn-soft);color:var(--warn);font-weight:600;line-height:1.4;}
+  .alert svg{width:15px;height:15px;flex-shrink:0;margin-top:1px;}
+  .related{display:flex;flex-direction:column;gap:6px;margin-bottom:18px;}
+  .related button{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-radius:9px;border:1px solid var(--line);background:var(--surface-raised);color:var(--ink);font-size:13px;font-weight:600;cursor:pointer;text-align:left;}
+  .related button:hover{border-color:var(--ink-faint);}
+  .related button span{color:var(--ink-faint);font-size:12px;font-weight:500;}
+  .timeline{display:flex;flex-direction:column;gap:12px;padding-left:4px;}
+  .timeline div{display:flex;gap:12px;font-size:12.5px;color:var(--ink-soft);}
+  .timeline i{width:9px;height:9px;border-radius:50%;background:var(--accent);margin-top:4px;flex-shrink:0;box-shadow:0 0 0 3px var(--accent-soft);}
+  .timeline b{color:var(--ink);font-weight:600;display:block;}
+  .drawer-foot{padding:14px 22px;border-top:1px solid var(--line);display:flex;gap:10px;}
+  .drawer-foot .btn{flex:1;justify-content:center;}
+
+  /* =========================================================
+     TOAST
+     ========================================================= */
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface-raised);border:1px solid var(--line);color:var(--ink);padding:12px 20px;border-radius:10px;font-size:13.5px;font-weight:600;box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:.25s;z-index:100;display:flex;align-items:center;gap:8px;max-width:calc(100% - 32px);}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .toast.danger{background:var(--danger);border-color:transparent;color:#fff;}
+  .toast svg{width:16px;height:16px;flex-shrink:0;}
+  .toast.ok svg{color:var(--teal);}
+
+  /* =========================================================
+     RESPONSIVE
+     ========================================================= */
+  @media (max-width:1180px){
+    .kpis{grid-template-columns:repeat(3,1fr);}
+    .insights{grid-template-columns:1fr 1fr;}
+    .insights .panel:first-child{grid-column:1 / -1;}
+  }
+  @media (max-width:900px){
+    .shell{display:block;}
+    .rail{position:static;height:auto;flex-direction:row;align-items:center;gap:14px;padding:12px 16px;overflow-x:auto;border-right:none;border-bottom:1px solid var(--line);}
+    .rail-brand{flex-shrink:0;}
+    .rail-brand-text span{display:none;}
+    .rail-section-label,.rail-shortcuts,.rail-admin{display:none;}
+    .rail nav{flex-shrink:0;}
+    .rail-route{flex-direction:row;gap:4px;}
+    .rail-node{padding:8px 12px;border-radius:10px;}
+    .rail-node .stem{display:none;}
+    .rail-node .label{font-size:12px;}
+    .rail-foot{flex-direction:row;margin-top:0;margin-left:auto;flex-shrink:0;}
+    .pill-btn{width:auto;}
+    .pill-btn span{display:none;}
+    .main{padding:20px 16px 60px;}
+    .kpis{grid-template-columns:repeat(2,1fr);}
+    .kpis .kpi:first-child{grid-column:1 / -1;}
+    .insights{grid-template-columns:1fr;}
+    .cards{grid-template-columns:1fr;}
+    header.top h1{font-size:26px;}
+    .toolbar{position:static;}
+    .search-wrap kbd{display:none;}
+    .field-row{grid-template-columns:1fr;}
+    .bar-row{grid-template-columns:90px 1fr 30px;}
+  }
+  @media (max-width:520px){
+    .top-actions{width:100%;}
+    .top-actions > *{flex:1;}
+    .top-actions .btn{width:100%;justify-content:center;}
+    .toolbar-row select{flex:1 1 calc(50% - 5px);min-width:0;}
+    .toolbar-row #sortSelect{flex-basis:100%;}
+    .toolbar-row > div[style]{display:none;}
+    #viewSeg,#tipoSeg{width:100%;}
+    #viewSeg button,#tipoSeg button{flex:1;justify-content:center;}
+    .admin-stats{grid-template-columns:1fr 1fr;}
+    .dl-row{grid-template-columns:90px 1fr auto;}
+  }
+  @media (prefers-reduced-motion:reduce){ *{animation:none !important;transition:none !important;} }
+
+  /* =========================================================
+     PRINT
+     ========================================================= */
+  .print-only{display:none;}
+  @media print{
+    :root{--bg:#fff;--surface:#fff;--surface-raised:#f5f5f5;--line:#ccc;--line-soft:#e5e5e5;--ink:#111;--ink-soft:#333;--ink-faint:#666;--shadow:none;}
+    .rail,.toolbar,.top-actions,.insights,.insights-head,.drawer,.drawer-bg,.overlay,.toast,.icon-btn,td.actions,th.actions-col{display:none !important;}
+    .shell{display:block;}
+    .main{padding:0;max-width:none;}
+    .print-only{display:block;font-size:11px;color:#555;margin-bottom:10px;}
+    .kpis{grid-template-columns:repeat(5,1fr);}
+    .kpi{padding:10px;}
+    .table-wrap{overflow:visible;border:none;}
+    table.grid{min-width:0;font-size:10.5px;}
+    table.grid th{position:static;}
+    tr{break-inside:avoid;}
+    .live{display:none;}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ================= RAIL ================= -->
+  <aside class="rail" id="rail">
+    <div class="rail-brand">
+      <div class="rail-mark">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 17c3-7 6-10 8-10s5 3 8 10" stroke="#20140A" stroke-width="1.8" stroke-linecap="round"/><circle cx="6" cy="19" r="1.6" fill="#20140A"/><circle cx="18" cy="19" r="1.6" fill="#20140A"/><rect x="10" y="4" width="4" height="6" rx="1" fill="#20140A"/></svg>
+      </div>
+      <div class="rail-brand-text">
+        <strong>Frota Móvel</strong>
+        <span>Celulares &amp; tablets corporativos</span>
+      </div>
+    </div>
+
+    <nav aria-label="Filiais">
+      <div class="rail-section-label">Filiais</div>
+      <div class="rail-route" id="railRoute"></div>
+    </nav>
+
+    <div class="rail-shortcuts" aria-label="Atalhos de teclado">
+      <div class="rail-section-label" style="padding:0;margin:0 0 2px;">Atalhos</div>
+      <div><span>Buscar</span><kbd>/</kbd></div>
+      <div><span>Novo dispositivo</span><kbd>N</kbd></div>
+      <div><span>Alternar visualização</span><kbd>V</kbd></div>
+      <div><span>Fechar janelas</span><kbd>Esc</kbd></div>
+    </div>
+
+    <div class="rail-foot">
+      <button class="pill-btn" id="themeBtn" title="Alternar tema claro/escuro"></button>
+      <button class="pill-btn" id="authBadge"></button>
+      <button class="rail-admin" id="adminBtn">Área administrativa</button>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <main class="main">
+    <header class="top">
+      <div>
+        <div class="crumbs" id="crumbs"></div>
+        <h1 id="pageTitle">Controle de Dispositivos</h1>
+        <div class="subline">
+          <span id="scopeLabel">Carregando…</span>
+          <span class="live" id="liveBadge"><i></i><span>Conectando…</span></span>
+        </div>
+      </div>
+      <div class="top-actions">
+        <div class="menu-wrap">
+          <button class="btn btn-ghost" id="exportBtn" aria-haspopup="true" aria-expanded="false">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Exportar
+            <svg viewBox="0 0 24 24" fill="none" style="width:13px;height:13px;"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          </button>
+          <div class="menu" id="exportMenu" role="menu">
+            <button data-export="xlsx-all" role="menuitem"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Excel completo<small>Todos os dispositivos + resumo por filial + pendências</small></span></button>
+            <button data-export="xlsx-view" role="menuitem"><svg viewBox="0 0 24 24" fill="none"><path d="M4 5h16l-6 8v6l-4-2v-4L4 5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>Excel da visão atual<small>Somente o que está filtrado na tela</small></span></button>
+            <button data-export="csv-view" role="menuitem"><svg viewBox="0 0 24 24" fill="none"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9l-6-6Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3v6h6" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>CSV da visão atual<small>Compatível com qualquer planilha</small></span></button>
+            <hr>
+            <button data-export="print" role="menuitem"><svg viewBox="0 0 24 24" fill="none"><path d="M7 9V3h10v6M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M7 14h10v7H7v-7Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>Imprimir / salvar PDF<small>Relatório em tabela da visão atual</small></span></button>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="addBtn">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          Novo dispositivo
+        </button>
+      </div>
+    </header>
+
+    <div class="print-only" id="printMeta"></div>
+
+    <section class="kpis" id="kpis" aria-label="Indicadores"></section>
+
+    <div class="insights-head">
+      <h2>Visão geral</h2>
+      <button class="link-btn" id="toggleInsights" aria-expanded="true">
+        <span>Ocultar painel</span>
+        <svg viewBox="0 0 24 24" fill="none"><path d="m6 15 6-6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <section class="insights" id="insights" aria-label="Gráficos e pendências"></section>
+
+    <section class="toolbar" aria-label="Filtros">
+      <div class="toolbar-row">
+        <div class="search-wrap" id="searchWrap">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <label class="sr-only" for="searchInput">Buscar</label>
+          <input type="text" id="searchInput" placeholder="Buscar colaborador, modelo, IMEI, contato ou setor…" autocomplete="off">
+          <kbd>/</kbd>
+          <button class="icon-btn sm clear" id="searchClear" title="Limpar busca"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+        </div>
+        <div class="seg" id="tipoSeg" role="group" aria-label="Tipo">
+          <button data-v="" class="on">Todos</button>
+          <button data-v="Celular">Celulares</button>
+          <button data-v="Tablet">Tablets</button>
+        </div>
+      </div>
+      <div class="toolbar-row">
+        <select id="filterSetor" aria-label="Setor"><option value="">Todos os setores</option></select>
+        <select id="filterStatus" aria-label="Status"></select>
+        <select id="sortSelect" aria-label="Ordenar">
+          <option value="colaborador:1">Colaborador (A–Z)</option>
+          <option value="colaborador:-1">Colaborador (Z–A)</option>
+          <option value="recente:-1">Atualizados recentemente</option>
+          <option value="criadoEm:-1">Cadastrados recentemente</option>
+          <option value="modelo:1">Modelo</option>
+          <option value="setor:1">Setor</option>
+          <option value="status:1">Status</option>
+        </select>
+        <div style="flex:1"></div>
+        <div class="seg" id="viewSeg" role="group" aria-label="Visualização">
+          <button data-v="cards" title="Cartões"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5" stroke="currentColor" stroke-width="1.9"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" stroke="currentColor" stroke-width="1.9"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" stroke="currentColor" stroke-width="1.9"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" stroke="currentColor" stroke-width="1.9"/></svg>Cartões</button>
+          <button data-v="table" title="Tabela"><svg viewBox="0 0 24 24" fill="none"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>Tabela</button>
+        </div>
+      </div>
+      <div class="chips" id="activeChips"></div>
+    </section>
+
+    <section id="listArea" aria-live="polite">
+      <div class="cards"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+    </section>
+  </main>
+</div>
+
+<!-- ================= DRAWER (detalhes) ================= -->
+<div class="drawer-bg" id="drawerBg"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Detalhes do dispositivo"></aside>
+
+<!-- ================= MODAL: dispositivo ================= -->
+<div class="overlay" id="deviceOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="deviceModalTitle">
+    <div class="modal-head">
+      <div>
+        <h2 id="deviceModalTitle">Novo dispositivo</h2>
+        <p id="deviceModalSub">Preencha os dados do aparelho e do responsável.</p>
+      </div>
+      <button class="modal-close" data-close="deviceOverlay" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="error-msg" id="deviceError"></div>
+
+      <div class="form-section">Aparelho</div>
+      <div class="field">
+        <label>Tipo de aparelho</label>
+        <div class="seg-field" id="f_tipo_seg"></div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="f_modelo">Modelo <span class="req">*</span></label>
+          <input type="text" id="f_modelo" placeholder="Ex.: Samsung Galaxy A54" list="modeloSuggestions" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="f_status">Status</label>
+          <select id="f_status"></select>
+        </div>
+      </div>
+      <div class="field" id="imeiField">
+        <label for="f_imei">IMEI</label>
+        <input type="text" id="f_imei" placeholder="15 dígitos — disque *#06# no aparelho" inputmode="numeric" autocomplete="off" class="mono">
+        <div class="field-hint" id="imeiHint"></div>
+      </div>
+
+      <div class="form-section">Responsável</div>
+      <div class="field-row">
+        <div class="field" id="colabField">
+          <label for="f_colaborador">Colaborador <span class="req">*</span></label>
+          <input type="text" id="f_colaborador" placeholder="Nome completo" list="colabSuggestions" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="f_contato">Contato</label>
+          <input type="tel" id="f_contato" placeholder="(00) 00000-0000" autocomplete="off">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="f_filial">Filial</label>
+          <select id="f_filial"></select>
+        </div>
+        <div class="field">
+          <label for="f_setor">Setor</label>
+          <input type="text" id="f_setor" placeholder="Ex.: Logística" list="setorSuggestions" autocomplete="off">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label for="f_obs">Observações</label>
+        <textarea id="f_obs" placeholder="Ex.: linha corporativa, acessórios entregues, estado de conservação…"></textarea>
+      </div>
+      <datalist id="setorSuggestions"></datalist>
+      <datalist id="modeloSuggestions"></datalist>
+      <datalist id="colabSuggestions"></datalist>
+    </div>
+    <div class="modal-foot">
+      <span class="hint" style="margin:0;"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> salva</span>
+      <span class="spacer"></span>
+      <button class="btn btn-ghost" data-close="deviceOverlay">Cancelar</button>
+      <button class="btn btn-primary" id="saveDeviceBtn">Salvar dispositivo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: senha ================= -->
+<div class="overlay" id="passOverlay">
+  <div class="modal" style="max-width:400px;" role="dialog" aria-modal="true" aria-labelledby="passTitle">
+    <div class="modal-head">
+      <div>
+        <h2 id="passTitle">Senha de edição</h2>
+        <p>Necessária para editar, excluir e administrar.</p>
+      </div>
+      <button class="modal-close" data-close="passOverlay" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="error-msg" id="passError"></div>
+      <div class="field">
+        <label for="passInput">Digite a senha para continuar</label>
+        <input type="password" id="passInput" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <p class="hint">A visualização dos dispositivos de todas as filiais é sempre livre e qualquer pessoa pode cadastrar. A senha libera edição, exclusão e a área administrativa nesta aba do navegador.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" data-close="passOverlay">Cancelar</button>
+      <button class="btn btn-primary" id="passConfirmBtn">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: admin ================= -->
+<div class="overlay" id="adminOverlay">
+  <div class="modal" style="max-width:460px;" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+    <div class="modal-head">
+      <div>
+        <h2 id="adminTitle">Área administrativa</h2>
+        <p>Senha de edição e cópia de segurança dos dados.</p>
+      </div>
+      <button class="modal-close" data-close="adminOverlay" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="admin-stats" id="adminStats"></div>
+      <div class="form-section">Trocar senha de edição</div>
+      <div class="error-msg" id="adminError"></div>
+      <div class="field">
+        <label for="newPassInput">Nova senha</label>
+        <input type="password" id="newPassInput" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+      </div>
+      <div class="field">
+        <label for="newPassInput2">Confirmar nova senha</label>
+        <input type="password" id="newPassInput2" placeholder="Repita a senha" autocomplete="new-password">
+      </div>
+      <button class="btn btn-primary" id="changePassBtn" style="width:100%;justify-content:center;">Salvar nova senha</button>
+      <div class="form-section" style="margin-top:20px;">Backup</div>
+      <button class="btn btn-ghost" id="backupBtn" style="width:100%;justify-content:center;">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Baixar backup completo (JSON)
+      </button>
+      <p class="hint">Guarde a senha em local seguro. O backup contém todos os registros com seus IDs e pode ser usado para restaurar os dados no Firestore.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: confirmação ================= -->
+<div class="overlay" id="confirmOverlay">
+  <div class="modal" style="max-width:420px;" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="modal-body" style="padding-top:22px;">
+      <div class="confirm-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m2 0-1 13a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <h2 id="confirmTitle" style="margin:0 0 8px;font-size:21px;">Excluir dispositivo?</h2>
+      <p class="confirm-text" id="confirmText"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="confirmCancel">Cancelar</button>
+      <button class="btn btn-danger" id="confirmOk">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import { getAnalytics, isSupported as analyticsIsSupported } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-analytics.js";
+import {
+  getFirestore, collection, doc, getDoc, setDoc, deleteDoc, onSnapshot
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+
+/* =========================================================
+   FIREBASE
+   ========================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyBWTR2Cm4JX7LJNnrIkQBxQlSSb2qZSvos",
+  authDomain: "qualidadenors-eed75.firebaseapp.com",
+  projectId: "qualidadenors-eed75",
+  storageBucket: "qualidadenors-eed75.firebasestorage.app",
+  messagingSenderId: "903332464109",
+  appId: "1:903332464109:web:6805fa60b99bae969013e4",
+  measurementId: "G-1C0TDYFG36"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+analyticsIsSupported().then(ok=>{ if(ok){ try{ getAnalytics(fbApp); }catch(e){} } }).catch(()=>{});
+
+const devicesCol = collection(db, 'dispositivos');
+const settingsRef = doc(db, 'configuracoes', 'admin');
+const DEFAULT_PASSWORD = 'admin123';
+
+/* =========================================================
+   CONSTANTES
+   ========================================================= */
+const FILIAIS = ['MATRIZ','Cuiabá','Sinop','Rondonópolis','Vilhena','Porto Velho'];
+const STATUS = ['Em uso','Reserva','Manutenção','Desativado'];
+const STATUS_CLASS = { 'Em uso':'ok', 'Reserva':'info', 'Manutenção':'warn', 'Desativado':'off' };
+const STATUS_COLOR = { 'Em uso':'var(--teal)', 'Reserva':'var(--blue)', 'Manutenção':'var(--warn)', 'Desativado':'var(--danger)' };
+const AVATAR_COLORS = ['#C9731B','#1F8F72','#3A6FC4','#8A55C2','#C2475A','#4D7F2E','#B05E9A','#2E7F96'];
+
+const ICONS = {
+  phone:'<svg viewBox="0 0 24 24" fill="none"><rect x="7" y="2" width="10" height="20" rx="2" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="18" r="0.8" fill="currentColor"/></svg>',
+  tablet:'<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="17" r="0.8" fill="currentColor"/></svg>',
+  edit:'<svg viewBox="0 0 24 24" fill="none"><path d="m16.5 3.5 4 4L8 20l-4.5 1L4.5 16.5 16.5 3.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+  trash:'<svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m2 0-1 13a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  lock:'<svg viewBox="0 0 24 24" fill="none"><rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 10V7a4 4 0 1 1 8 0v3" stroke="currentColor" stroke-width="1.8"/></svg>',
+  unlock:'<svg viewBox="0 0 24 24" fill="none"><rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 10V7a4 4 0 0 1 7.5-1.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  alert:'<svg viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 3.5v.01M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  x:'<svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>',
+  copy:'<svg viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M5 15V6a2 2 0 0 1 2-2h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  whats:'<svg viewBox="0 0 24 24" fill="none"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19l-4 1Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 9.5c.3 2 2.2 4.2 4.5 4.8l1-1.2 2 .9c-.2 1.1-1.1 1.8-2.2 1.8-3.4-.2-6.6-3.4-6.8-6.8 0-1.1.7-2 1.8-2.2l.9 2-1.2.7Z" fill="currentColor"/></svg>',
+  arrowUp:'<svg viewBox="0 0 24 24" fill="none"><path d="m6 15 6-6 6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
+  arrowDown:'<svg viewBox="0 0 24 24" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
+  sort:'<svg viewBox="0 0 24 24" fill="none" opacity=".45"><path d="m8 9 4-4 4 4M8 15l4 4 4-4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>',
+  boxOpen:'<svg viewBox="0 0 24 24" fill="none"><path d="M3 9.5 12 5l9 4.5M3 9.5v9L12 23l9-4.5v-9M3 9.5 12 14l9-4.5M12 14v9" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+  sun:'<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  moon:'<svg viewBox="0 0 24 24" fill="none"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+  devices:'<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="12" height="15" rx="2" stroke="currentColor" stroke-width="1.8"/><rect x="15" y="9" width="6" height="11" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>',
+  pin:'<svg viewBox="0 0 24 24" fill="none"><path d="M12 21s-7-6.2-7-11.5a7 7 0 1 1 14 0C19 14.8 12 21 12 21Z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="9.5" r="2.5" stroke="currentColor" stroke-width="1.8"/></svg>',
+  shield:'<svg viewBox="0 0 24 24" fill="none"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6l-8-3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>'
+};
+
+/* =========================================================
+   ESTADO
+   ========================================================= */
+const state = {
+  devices: [],
+  settings: { password: DEFAULT_PASSWORD },
+  unlocked: false,
+  loaded: false,
+  editingId: null,
+  pendingAction: null,
+  formTipo: 'Celular',
+  drawerId: null,
+  lastSync: null,
+  // filtros
+  filial: '', q: '', tipo: '', setor: '', status: '', issue: '',
+  sort: { key:'colaborador', dir:1 },
+  view: lsGet('frota-view') === 'table' ? 'table' : 'cards',
+  insightsOpen: lsGet('frota-insights') !== '0'
+};
+try{ state.unlocked = sessionStorage.getItem('frota-unlocked') === '1'; }catch(e){}
+let imeiCount = new Map();
+
+/* pendências de cadastro */
+const ISSUES = {
+  semImei:   { label:'Sem IMEI',           test:d=> !imeiDigits(d) },
+  imeiCheck: { label:'IMEI a verificar',   test:d=> !!imeiDigits(d) && !luhnOk(imeiDigits(d)) },
+  imeiDup:   { label:'IMEI duplicado',     test:d=> !!imeiDigits(d) && (imeiCount.get(imeiDigits(d))||0) > 1 },
+  semContato:{ label:'Sem contato',        test:d=> !d.contato },
+  semSetor:  { label:'Sem setor',          test:d=> !d.setor }
+};
+
+/* =========================================================
+   UTILITÁRIOS
+   ========================================================= */
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+const $ = id => document.getElementById(id);
+function esc(s){ return (s??'').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function norm(s){ return (s??'').toString().normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase(); }
+function digits(s){ return (s??'').toString().replace(/\D/g,''); }
+function imeiDigits(d){ return digits(d.imei); }
+function plural(n, s, p){ return n + ' ' + (n===1 ? s : (p || s+'s')); }
+function pct(n, t){ return t ? Math.round(n*100/t) : 0; }
+
+function luhnOk(s){
+  if(!/^\d{15}$/.test(s)) return false;
+  let sum = 0;
+  for(let i=0;i<15;i++){
+    let d = +s[14-i];
+    if(i % 2 === 1){ d *= 2; if(d > 9) d -= 9; }
+    sum += d;
+  }
+  return sum % 10 === 0;
+}
+function formatPhone(v){
+  const d = digits(v).slice(0,11);
+  if(d.length <= 2) return d ? '('+d : '';
+  if(d.length <= 6) return '('+d.slice(0,2)+') '+d.slice(2);
+  if(d.length <= 10) return '('+d.slice(0,2)+') '+d.slice(2,6)+'-'+d.slice(6);
+  return '('+d.slice(0,2)+') '+d.slice(2,7)+'-'+d.slice(7);
+}
+function initials(name){
+  const p = (name||'').trim().split(/\s+/).filter(Boolean);
+  if(!p.length) return '?';
+  return ((p[0][0]||'') + (p.length>1 ? p[p.length-1][0] : '')).toUpperCase();
+}
+function avatarColor(name){
+  let h = 0; for(const c of (name||'')) h = (h*31 + c.charCodeAt(0)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+function avatar(name){ return `<span class="avatar" style="background:${avatarColor(name)}" aria-hidden="true">${esc(initials(name))}</span>`; }
+function fmtDate(iso, withTime){
+  if(!iso) return '—';
+  const d = new Date(iso); if(isNaN(d)) return '—';
+  return withTime ? d.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : d.toLocaleDateString('pt-BR');
+}
+function relTime(iso){
+  if(!iso) return '';
+  const diff = (Date.now() - new Date(iso).getTime())/1000;
+  if(isNaN(diff)) return '';
+  if(diff < 60) return 'agora mesmo';
+  if(diff < 3600) return 'há ' + plural(Math.floor(diff/60),'minuto');
+  if(diff < 86400) return 'há ' + plural(Math.floor(diff/3600),'hora');
+  if(diff < 86400*30) return 'há ' + plural(Math.floor(diff/86400),'dia');
+  if(diff < 86400*365) return 'há ' + plural(Math.floor(diff/(86400*30)),'mês','meses');
+  return 'há ' + plural(Math.floor(diff/(86400*365)),'ano');
+}
+/* realça termo buscado (ignora acentos) */
+function hl(text){
+  const raw = (text??'').toString();
+  const q = norm(state.q.trim());
+  if(!q) return esc(raw);
+  const n = norm(raw);
+  if(n.length !== raw.length) return esc(raw);
+  let out = '', i = 0, idx;
+  while((idx = n.indexOf(q, i)) !== -1){
+    out += esc(raw.slice(i, idx)) + '<mark>' + esc(raw.slice(idx, idx+q.length)) + '</mark>';
+    i = idx + q.length;
+  }
+  return out + esc(raw.slice(i));
+}
+
+let toastTimer;
+function showToast(msg, isError){
+  const t = $('toast');
+  t.innerHTML = (isError ? ICONS.alert : ICONS.check) + '<span>'+esc(msg)+'</span>';
+  t.className = 'toast show ' + (isError ? 'danger' : 'ok');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.className='toast', 2800);
+}
+async function copyText(txt, label){
+  try{ await navigator.clipboard.writeText(txt); showToast((label||'Texto')+' copiado.'); }
+  catch(e){
+    const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); showToast((label||'Texto')+' copiado.'); }catch(_){ showToast('Não foi possível copiar.', true); }
+    ta.remove();
+  }
+}
+
+/* =========================================================
+   TEMA
+   ========================================================= */
+function currentTheme(){ return document.documentElement.getAttribute('data-theme')==='light' ? 'light' : 'dark'; }
+function updateThemeBtn(){
+  const light = currentTheme()==='light';
+  $('themeBtn').innerHTML = (light ? ICONS.moon : ICONS.sun) + '<span>' + (light ? 'Tema escuro' : 'Tema claro') + '</span>';
+}
+function toggleTheme(){
+  const next = currentTheme()==='light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  lsSet('tema-frota', next);
+  updateThemeBtn();
+}
+
+/* =========================================================
+   MODAIS
+   ========================================================= */
+let lastFocus = null;
+function openModal(id){
+  lastFocus = document.activeElement;
+  $(id).classList.add('show');
+  setTimeout(()=>{ const f = $(id).querySelector('input:not([type=hidden]),select,textarea,button.btn-primary,button.btn-danger'); if(f) f.focus(); }, 30);
+}
+function closeModal(id){
+  $(id).classList.remove('show');
+  if(id==='passOverlay'){ $('passInput').value=''; $('passError').classList.remove('show'); state.pendingAction=null; }
+  if(id==='adminOverlay'){ $('newPassInput').value=''; $('newPassInput2').value=''; $('adminError').classList.remove('show'); }
+  if(id==='confirmOverlay' && confirmResolve){ confirmResolve(false); confirmResolve=null; }
+  if(lastFocus && document.body.contains(lastFocus)) try{ lastFocus.focus(); }catch(e){}
+}
+function topOverlay(){ return [...document.querySelectorAll('.overlay.show')].pop(); }
+
+let confirmResolve = null;
+function confirmDialog(title, html, okText){
+  $('confirmTitle').textContent = title;
+  $('confirmText').innerHTML = html;
+  $('confirmOk').textContent = okText || 'Confirmar';
+  openModal('confirmOverlay');
+  return new Promise(res => { confirmResolve = res; });
+}
+
+/* =========================================================
+   FIRESTORE
+   ========================================================= */
+function normalizeDevice(id, data){
+  const obj = { id, ...data };
+  const nome = (obj.filial||'').toString().trim();
+  const canon = FILIAIS.find(f => norm(f) === norm(nome));
+  if(canon) obj.filial = canon;
+  if(!STATUS.includes(obj.status)) obj.status = 'Em uso';
+  if(obj.tipo !== 'Tablet') obj.tipo = 'Celular';
+  if(/^\d{10,11}$/.test((obj.contato||'').toString().trim())) obj.contato = formatPhone(obj.contato);
+  return obj;
+}
+
+async function carregarConfiguracoes(){
+  try{
+    const snap = await getDoc(settingsRef);
+    if(snap.exists()){
+      state.settings = snap.data();
+      if(!state.settings.password) state.settings.password = DEFAULT_PASSWORD;
+    } else {
+      state.settings = { password: DEFAULT_PASSWORD };
+      await setDoc(settingsRef, state.settings);
+    }
+  }catch(e){
+    console.error('Erro ao carregar configurações do Firebase:', e);
+    state.settings = { password: DEFAULT_PASSWORD };
+  }
+}
+
+function assinarDispositivos(){
+  onSnapshot(devicesCol, snapshot=>{
+    state.devices = snapshot.docs.map(d => normalizeDevice(d.id, d.data()));
+    state.loaded = true;
+    state.lastSync = new Date();
+    setLive(snapshot.metadata && snapshot.metadata.fromCache ? 'cache' : 'ok');
+    renderAll();
+    if(state.drawerId){
+      if(state.devices.some(x=>x.id===state.drawerId)) renderDrawer(); else closeDrawer();
+    }
+  }, err=>{
+    console.error('Erro ao sincronizar com o Firebase:', err);
+    state.loaded = false;
+    setLive('err');
+    $('listArea').innerHTML = `<div class="empty">${ICONS.boxOpen}<h3>Não foi possível conectar ao Firebase</h3><p>Verifique a conexão com a internet e as regras de segurança do Firestore no projeto "qualidadenors-eed75". (código: ${esc(err&&err.code?err.code:'desconhecido')})</p><button class="btn btn-ghost" onclick="location.reload()">Tentar novamente</button></div>`;
+    showToast('Erro ao conectar ao banco de dados.', true);
+  });
+}
+
+function setLive(mode){
+  const b = $('liveBadge');
+  if(mode==='ok'){
+    b.className = 'live ok';
+    b.querySelector('span').textContent = 'Ao vivo · ' + state.lastSync.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    b.title = 'Sincronizado em tempo real com o Firestore';
+  } else if(mode==='cache'){
+    b.className = 'live';
+    b.querySelector('span').textContent = 'Dados em cache (offline)';
+  } else {
+    b.className = 'live err';
+    b.querySelector('span').textContent = 'Sem conexão';
+  }
+}
+window.addEventListener('offline', ()=> setLive('cache'));
+
+/* =========================================================
+   FILTRAGEM
+   ========================================================= */
+function scoped(){ return state.filial ? state.devices.filter(d=>d.filial===state.filial) : state.devices; }
+
+function applyFilters(list){
+  const q = norm(state.q.trim());
+  const qd = digits(state.q);
+  return list.filter(d=>{
+    if(state.filial && d.filial!==state.filial) return false;
+    if(state.tipo && d.tipo!==state.tipo) return false;
+    if(state.setor && d.setor!==state.setor) return false;
+    if(state.status && d.status!==state.status) return false;
+    if(state.issue && !ISSUES[state.issue].test(d)) return false;
+    if(q){
+      const hay = norm([d.colaborador,d.modelo,d.imei,d.contato,d.setor,d.filial,d.observacoes].join(' '));
+      const hayD = digits(d.imei) + ' ' + digits(d.contato);
+      if(!hay.includes(q) && !(qd.length >= 3 && hayD.includes(qd))) return false;
+    }
+    return true;
+  });
+}
+function sortList(list){
+  const { key, dir } = state.sort;
+  const val = d => {
+    if(key==='recente') return d.atualizadoEm || d.criadoEm || '';
+    if(key==='status') return STATUS.indexOf(d.status);
+    return (d[key] ?? '').toString();
+  };
+  return [...list].sort((a,b)=>{
+    const va = val(a), vb = val(b);
+    let r = (typeof va === 'number') ? va - vb : va.localeCompare(vb, 'pt-BR', { sensitivity:'base', numeric:true });
+    if(r === 0) r = (a.colaborador||'').localeCompare(b.colaborador||'','pt-BR');
+    return r * dir;
+  });
+}
+function currentList(){ return sortList(applyFilters(state.devices)); }
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+function renderAll(){
+  imeiCount = new Map();
+  state.devices.forEach(d=>{ const i = imeiDigits(d); if(i) imeiCount.set(i, (imeiCount.get(i)||0)+1); });
+  renderRail(); renderHeader(); renderKpis(); renderInsights(); renderFilters(); renderList(); updateAuthBadge();
+}
+function renderScope(){ renderRail(); renderHeader(); renderKpis(); renderInsights(); renderList(); }
+
+function renderRail(){
+  const items = [{ nome:'', label:'Todas as filiais' }, ...FILIAIS.map(f=>({ nome:f, label:f }))];
+  $('railRoute').innerHTML = items.map(it=>{
+    const count = it.nome==='' ? state.devices.length : state.devices.filter(d=>d.filial===it.nome).length;
+    const active = state.filial===it.nome ? ' active' : '';
+    return `<button class="rail-node${active}" data-filial="${esc(it.nome)}" ${active?'aria-current="page"':''}>
+      <span class="stem"><span class="dot"></span></span>
+      <span class="label">${esc(it.label)}</span>
+      <span class="count mono">${count}</span>
+    </button>`;
+  }).join('');
+}
+
+function renderHeader(){
+  const sc = scoped();
+  $('crumbs').innerHTML = state.filial
+    ? `<button data-filial="">Todas as filiais</button><span>›</span><span>${esc(state.filial)}</span>`
+    : `<span>Frota Móvel</span><span>›</span><span>Visão consolidada</span>`;
+  $('pageTitle').textContent = state.filial ? 'Filial ' + state.filial : 'Controle de Dispositivos';
+  $('scopeLabel').textContent = state.loaded ? plural(sc.length,'dispositivo') + ' · ' + plural(new Set(sc.map(d=>norm(d.colaborador)).filter(Boolean)).size,'colaborador','colaboradores') : 'Carregando…';
+  $('printMeta').textContent = 'Relatório gerado em ' + new Date().toLocaleString('pt-BR') + ' · ' + (state.filial || 'Todas as filiais');
+}
+
+function renderKpis(){
+  const sc = scoped();
+  const total = sc.length;
+  const cel = sc.filter(d=>d.tipo==='Celular').length;
+  const tab = sc.filter(d=>d.tipo==='Tablet').length;
+  const emUso = sc.filter(d=>d.status==='Em uso').length;
+  const pend = sc.filter(d=>Object.values(ISSUES).some(i=>i.test(d))).length;
+  const filiaisAtivas = new Set(state.devices.map(d=>d.filial).filter(f=>FILIAIS.includes(f))).size;
+  const fourth = state.filial
+    ? `<div class="kpi blue"><div class="lbl">${ICONS.check}Em uso</div><div class="num">${emUso}<span class="of"> / ${total}</span></div><div class="meter"><span style="width:${pct(emUso,total)}%"></span></div></div>`
+    : `<div class="kpi blue"><div class="lbl">${ICONS.pin}Filiais ativas</div><div class="num">${filiaisAtivas}<span class="of"> / ${FILIAIS.length}</span></div><div class="meter"><span style="width:${pct(filiaisAtivas,FILIAIS.length)}%"></span></div></div>`;
+  $('kpis').innerHTML = `
+    <div class="kpi"><div class="lbl">${ICONS.devices}Dispositivos</div><div class="num">${total}</div><div class="sub">${emUso} em uso · ${total-emUso} fora de uso</div></div>
+    <div class="kpi accent clickable" data-kpi-tipo="Celular" title="Filtrar celulares"><div class="lbl">${ICONS.phone}Celulares</div><div class="num">${cel}</div><div class="meter"><span style="width:${pct(cel,total)}%"></span></div><div class="sub">${pct(cel,total)}% do total</div></div>
+    <div class="kpi teal clickable" data-kpi-tipo="Tablet" title="Filtrar tablets"><div class="lbl">${ICONS.tablet}Tablets</div><div class="num">${tab}</div><div class="meter"><span style="width:${pct(tab,total)}%"></span></div><div class="sub">${pct(tab,total)}% do total</div></div>
+    ${fourth}
+    <div class="kpi ${pend?'warn':''}"><div class="lbl">${ICONS.alert}Com pendência</div><div class="num">${pend}</div><div class="sub">${pend ? 'cadastros a revisar' : 'tudo em ordem'}</div></div>
+  `;
+}
+
+function renderInsights(){
+  const box = $('insights');
+  box.classList.toggle('collapsed', !state.insightsOpen);
+  $('toggleInsights').querySelector('span').textContent = state.insightsOpen ? 'Ocultar painel' : 'Mostrar painel';
+  $('toggleInsights').querySelector('svg').style.transform = state.insightsOpen ? '' : 'rotate(180deg)';
+  $('toggleInsights').setAttribute('aria-expanded', state.insightsOpen);
+  if(!state.insightsOpen) return;
+
+  // 1) por filial
+  const perFilial = FILIAIS.map(f=>{
+    const list = state.devices.filter(d=>d.filial===f);
+    return { f, total:list.length, c:list.filter(d=>d.tipo==='Celular').length, t:list.filter(d=>d.tipo==='Tablet').length };
+  });
+  const semFilial = state.devices.filter(d=>!FILIAIS.includes(d.filial)).length;
+  const max = Math.max(1, ...perFilial.map(x=>x.total));
+  const bars = perFilial.map(x=>`
+    <button class="bar-row${state.filial===x.f?' active':''}" data-filial="${esc(x.f)}" title="${esc(x.f)}: ${x.c} celulares, ${x.t} tablets">
+      <span class="nm">${esc(x.f)}</span>
+      <span class="bar-track"><span class="c" style="width:${x.c/max*100}%"></span><span class="t" style="width:${x.t/max*100}%"></span></span>
+      <span class="n">${x.total}</span>
+    </button>`).join('');
+
+  // 2) composição do escopo
+  const sc = scoped();
+  const total = sc.length;
+  const cel = sc.filter(d=>d.tipo==='Celular').length;
+  const C = 2*Math.PI*42;
+  const celLen = total ? cel/total*C : 0;
+  const tabLen = total ? (total-cel)/total*C : 0;
+  const statusRows = STATUS.map(s=>{
+    const n = sc.filter(d=>d.status===s).length;
+    return `<button class="stat-item${state.status===s?' active':''}" data-status="${esc(s)}"><span class="l"><i style="background:${STATUS_COLOR[s]}"></i>${esc(s)}</span><span class="r">${n}<small>${pct(n,total)}%</small></span></button>`;
+  }).join('');
+
+  // 3) qualidade dos cadastros
+  const issueRows = Object.entries(ISSUES).map(([k,v])=>{
+    const n = sc.filter(v.test).length;
+    return `<button class="stat-item${state.issue===k?' active':''}" data-issue="${k}"><span class="l">${esc(v.label)}</span><span class="issue-count${n?' bad':''}">${n}</span></button>`;
+  }).join('');
+  const comPend = sc.filter(d=>Object.values(ISSUES).some(i=>i.test(d))).length;
+  const score = total ? Math.round((total-comPend)/total*100) : 100;
+  const scoreColor = score >= 90 ? 'var(--teal)' : score >= 70 ? 'var(--warn)' : 'var(--danger)';
+
+  box.innerHTML = `
+    <div class="panel">
+      <h3>Dispositivos por filial</h3>
+      <div class="panel-sub">Clique em uma filial para filtrar${semFilial ? ` · ${plural(semFilial,'registro')} sem filial reconhecida` : ''}</div>
+      <div class="bars">${bars}</div>
+      <div class="legend"><span><i style="background:var(--accent)"></i>Celulares</span><span><i style="background:var(--teal)"></i>Tablets</span></div>
+    </div>
+    <div class="panel">
+      <h3>Composição ${state.filial ? '· '+esc(state.filial) : 'geral'}</h3>
+      <div class="panel-sub">Tipos de aparelho e situação atual</div>
+      <div class="donut-wrap">
+        <div class="donut" role="img" aria-label="${cel} celulares e ${total-cel} tablets">
+          <svg viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="42" stroke="var(--line-soft)"/>
+            <circle cx="50" cy="50" r="42" stroke="var(--accent)" stroke-dasharray="${celLen} ${C}" stroke-linecap="${celLen&&tabLen?'butt':'round'}"/>
+            <circle cx="50" cy="50" r="42" stroke="var(--teal)" stroke-dasharray="${tabLen} ${C}" stroke-dashoffset="${-celLen}"/>
+          </svg>
+          <div class="center"><b>${total}</b><span>aparelhos</span></div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item" style="cursor:default"><span class="l"><i style="background:var(--accent)"></i>Celulares</span><span class="r">${cel}<small>${pct(cel,total)}%</small></span></div>
+          <div class="stat-item" style="cursor:default"><span class="l"><i style="background:var(--teal)"></i>Tablets</span><span class="r">${total-cel}<small>${pct(total-cel,total)}%</small></span></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-list">${statusRows}</div>
+    </div>
+    <div class="panel">
+      <h3>Qualidade dos cadastros</h3>
+      <div class="panel-sub">Clique para ver os registros com pendência</div>
+      <div class="health">
+        <div class="health-score" style="color:${scoreColor}">${score}<small>%</small></div>
+        <div class="health-txt">dos cadastros ${state.filial?'desta filial ':''}estão completos.<br>${comPend ? plural(comPend,'registro')+' precisa'+(comPend>1?'m':'')+' de revisão.' : 'Nenhuma pendência encontrada.'}</div>
+      </div>
+      <div class="stat-list">${issueRows}</div>
+    </div>`;
+}
+
+function renderFilters(){
+  const setores = [...new Set(state.devices.map(d=>d.setor).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const fSetor = $('filterSetor');
+  fSetor.innerHTML = '<option value="">Todos os setores</option>' + setores.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
+  if(state.setor && !setores.includes(state.setor)) state.setor = '';
+  fSetor.value = state.setor;
+
+  $('filterStatus').innerHTML = '<option value="">Todos os status</option>' + STATUS.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
+  $('filterStatus').value = state.status;
+
+  $('setorSuggestions').innerHTML = setores.map(s=>`<option value="${esc(s)}">`).join('');
+  const modelos = [...new Set(state.devices.map(d=>d.modelo).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  $('modeloSuggestions').innerHTML = modelos.map(s=>`<option value="${esc(s)}">`).join('');
+  const colabs = [...new Set(state.devices.map(d=>d.colaborador).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  $('colabSuggestions').innerHTML = colabs.map(s=>`<option value="${esc(s)}">`).join('');
+
+  $('f_filial').innerHTML = FILIAIS.map(f=>`<option value="${esc(f)}">${esc(f)}</option>`).join('');
+  $('f_status').innerHTML = STATUS.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
+}
+
+function syncControls(){
+  $('searchInput').value = state.q;
+  $('searchWrap').classList.toggle('has-value', !!state.q);
+  $('filterSetor').value = state.setor;
+  $('filterStatus').value = state.status;
+  $('sortSelect').value = [...$('sortSelect').options].some(o=>o.value===state.sort.key+':'+state.sort.dir) ? state.sort.key+':'+state.sort.dir : '';
+  document.querySelectorAll('#tipoSeg button').forEach(b=>b.classList.toggle('on', b.dataset.v===state.tipo));
+  document.querySelectorAll('#viewSeg button').forEach(b=>b.classList.toggle('on', b.dataset.v===state.view));
+}
+
+function renderChips(count){
+  const chips = [];
+  if(state.q) chips.push(['q', 'Busca: “'+state.q+'”']);
+  if(state.tipo) chips.push(['tipo', state.tipo==='Celular'?'Celulares':'Tablets']);
+  if(state.setor) chips.push(['setor', 'Setor: '+state.setor]);
+  if(state.status) chips.push(['status', 'Status: '+state.status]);
+  if(state.issue) chips.push(['issue', 'Pendência: '+ISSUES[state.issue].label]);
+  const base = scoped().length;
+  $('activeChips').innerHTML =
+    `<span class="count-txt">Exibindo <b>${count}</b> de <b>${base}</b></span>` +
+    chips.map(([k,l])=>`<button class="chip" data-chip="${k}" title="Remover filtro">${esc(l)}${ICONS.x}</button>`).join('') +
+    (chips.length > 1 ? `<button class="chip-clear" data-chip="all">Limpar filtros</button>` : '');
+}
+
+function cardHTML(d){
+  const chipClass = d.tipo==='Tablet' ? 'tablet' : 'celular';
+  const icon = d.tipo==='Tablet' ? ICONS.tablet : ICONS.phone;
+  const im = imeiDigits(d);
+  const imeiFlag = im && (!luhnOk(im) || (imeiCount.get(im)||0)>1)
+    ? `<span class="flag" title="${(imeiCount.get(im)||0)>1?'IMEI duplicado':'IMEI a verificar'}">${ICONS.alert}</span>` : '';
+  const lock = !state.unlocked;
+  return `<article class="card${d.status==='Desativado'?' off':''}" data-id="${esc(d.id)}" tabindex="0" aria-label="${esc(d.colaborador)} — ${esc(d.modelo)}">
+    <div class="card-top">
+      <div class="chips-row">
+        <span class="type-chip ${chipClass}">${icon}${esc(d.tipo)}</span>
+        <span class="status ${STATUS_CLASS[d.status]}">${esc(d.status)}</span>
+      </div>
+      <div class="card-actions">
+        <button class="icon-btn" data-act="edit" data-id="${esc(d.id)}" title="${lock?'Editar (requer senha)':'Editar'}">${ICONS.edit}</button>
+        <button class="icon-btn danger" data-act="delete" data-id="${esc(d.id)}" title="${lock?'Excluir (requer senha)':'Excluir'}">${ICONS.trash}</button>
+      </div>
+    </div>
+    <div class="card-person">
+      ${avatar(d.colaborador)}
+      <div>
+        <div class="card-name">${hl(d.colaborador)||'—'}</div>
+        <div class="card-sub">${d.contato ? hl(d.contato) : 'Sem contato informado'}</div>
+      </div>
+    </div>
+    <div class="card-meta">
+      <div class="card-meta-row"><span class="k">Modelo</span><span class="v">${hl(d.modelo)||'—'}</span></div>
+      <div class="card-meta-row"><span class="k">IMEI</span><span class="v mono">${imeiFlag}${d.imei ? hl(d.imei) : 'sem IMEI'}</span></div>
+      <div class="card-meta-row"><span class="k">Setor</span><span class="v">${d.setor ? `<span class="setor-tag">${hl(d.setor)}</span>` : '—'}</span></div>
+    </div>
+  </article>`;
+}
+
+function tableHTML(list){
+  const cols = [
+    ['tipo','Tipo'],['colaborador','Colaborador'],['contato','Contato'],['modelo','Modelo'],
+    ['imei','IMEI'],['filial','Filial'],['setor','Setor'],['status','Status']
+  ];
+  const th = cols.map(([k,l])=>{
+    const sorted = state.sort.key===k;
+    const ic = sorted ? (state.sort.dir===1 ? ICONS.arrowUp : ICONS.arrowDown) : ICONS.sort;
+    return `<th class="${sorted?'sorted':''}" aria-sort="${sorted?(state.sort.dir===1?'ascending':'descending'):'none'}"><button data-sort="${k}">${l}${ic}</button></th>`;
+  }).join('') + '<th class="nosort actions-col"><span class="sr-only">Ações</span></th>';
+  const lock = !state.unlocked;
+  const rows = list.map(d=>{
+    const im = imeiDigits(d);
+    const flag = im && (!luhnOk(im) || (imeiCount.get(im)||0)>1) ? `<span class="flag" title="IMEI a verificar" style="display:inline-flex;margin-right:6px;vertical-align:-3px;">${ICONS.alert}</span>` : '';
+    return `<tr data-id="${esc(d.id)}" tabindex="0">
+      <td><span class="type-chip ${d.tipo==='Tablet'?'tablet':'celular'}">${d.tipo==='Tablet'?ICONS.tablet:ICONS.phone}${esc(d.tipo)}</span></td>
+      <td class="strong"><span class="who">${avatar(d.colaborador)}<span>${hl(d.colaborador)||'—'}</span></span></td>
+      <td>${d.contato?hl(d.contato):'—'}</td>
+      <td>${hl(d.modelo)||'—'}</td>
+      <td class="mono">${flag}${d.imei?hl(d.imei):'—'}</td>
+      <td>${esc(d.filial)||'—'}</td>
+      <td>${d.setor?`<span class="setor-tag">${hl(d.setor)}</span>`:'—'}</td>
+      <td><span class="status ${STATUS_CLASS[d.status]}">${esc(d.status)}</span></td>
+      <td class="actions">
+        <button class="icon-btn sm" data-act="edit" data-id="${esc(d.id)}" title="${lock?'Editar (requer senha)':'Editar'}">${ICONS.edit}</button>
+        <button class="icon-btn sm danger" data-act="delete" data-id="${esc(d.id)}" title="${lock?'Excluir (requer senha)':'Excluir'}">${ICONS.trash}</button>
+      </td>
+    </tr>`;
+  }).join('');
+  return `<div class="table-wrap"><table class="grid"><thead><tr>${th}</tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function renderList(){
+  syncControls();
+  const area = $('listArea');
+  if(!state.loaded) return;
+  const list = currentList();
+  renderChips(list.length);
+
+  if(state.devices.length===0){
+    area.innerHTML = `<div class="empty">${ICONS.boxOpen}<h3>Nenhum dispositivo cadastrado</h3><p>Comece adicionando o primeiro celular ou tablet ao controle da frota.</p><button class="btn btn-primary" data-empty="add">Cadastrar dispositivo</button></div>`;
+    return;
+  }
+  if(list.length===0){
+    area.innerHTML = `<div class="empty">${ICONS.boxOpen}<h3>Nada encontrado</h3><p>Nenhum dispositivo corresponde à busca e aos filtros atuais${state.filial?' nesta filial':''}.</p><button class="btn btn-ghost" data-chip="all">Limpar filtros</button></div>`;
+    return;
+  }
+  if(state.view==='table'){ area.innerHTML = tableHTML(list); return; }
+
+  if(state.filial){ area.innerHTML = `<div class="cards">${list.map(cardHTML).join('')}</div>`; return; }
+
+  const grupos = {};
+  list.forEach(d=>{
+    const chave = FILIAIS.includes(d.filial) ? d.filial : (d.filial && d.filial.trim() ? d.filial.trim() : 'Sem filial definida');
+    (grupos[chave] = grupos[chave] || []).push(d);
+  });
+  const ordem = [...FILIAIS, 'Sem filial definida'];
+  const nomes = Object.keys(grupos).sort((a,b)=>{
+    const ia = ordem.indexOf(a), ib = ordem.indexOf(b);
+    if(ia===-1 && ib===-1) return a.localeCompare(b,'pt-BR');
+    if(ia===-1) return 1; if(ib===-1) return -1;
+    return ia-ib;
+  });
+  area.innerHTML = nomes.map(nome=>{
+    const itens = grupos[nome];
+    const c = itens.filter(d=>d.tipo==='Celular').length;
+    const isFilial = FILIAIS.includes(nome);
+    return `<section class="filial-group">
+      <div class="filial-head">
+        <span class="dot"></span>
+        ${isFilial ? `<button class="filial-name" data-filial="${esc(nome)}" title="Abrir filial">${esc(nome)}</button>` : `<span class="filial-name" style="cursor:default">${esc(nome)}</span>`}
+        <span class="mini">${plural(c,'celular','celulares')} · ${plural(itens.length-c,'tablet')}</span>
+        <span class="filial-count">${plural(itens.length,'dispositivo')}</span>
+      </div>
+      <div class="cards">${itens.map(cardHTML).join('')}</div>
+    </section>`;
+  }).join('');
+}
+
+/* =========================================================
+   DRAWER (detalhes)
+   ========================================================= */
+function openDrawer(id){
+  state.drawerId = id;
+  renderDrawer();
+  $('drawer').classList.add('show');
+  $('drawerBg').classList.add('show');
+  setTimeout(()=>{ const b = $('drawer').querySelector('.modal-close'); if(b) b.focus(); }, 50);
+}
+function closeDrawer(){
+  state.drawerId = null;
+  $('drawer').classList.remove('show');
+  $('drawerBg').classList.remove('show');
+}
+function renderDrawer(){
+  const d = state.devices.find(x=>x.id===state.drawerId);
+  if(!d) return;
+  const im = imeiDigits(d);
+  const alerts = Object.entries(ISSUES).filter(([,v])=>v.test(d)).map(([k,v])=>{
+    let msg = v.label;
+    if(k==='imeiCheck') msg = 'IMEI com formato ou dígito verificador inválido — confira com *#06# no aparelho.';
+    if(k==='imeiDup'){
+      const outros = state.devices.filter(x=>x.id!==d.id && imeiDigits(x)===im).map(x=>x.colaborador).join(', ');
+      msg = 'Este IMEI também está cadastrado para: ' + outros + '.';
+    }
+    if(k==='semImei') msg = 'IMEI não informado.';
+    if(k==='semContato') msg = 'Contato do colaborador não informado.';
+    if(k==='semSetor') msg = 'Setor não informado.';
+    return `<div class="alert">${ICONS.alert}<span>${esc(msg)}</span></div>`;
+  }).join('');
+  const related = state.devices.filter(x=>x.id!==d.id && d.colaborador && norm(x.colaborador)===norm(d.colaborador));
+  const lock = !state.unlocked;
+  const phone = digits(d.contato);
+  const wa = phone.length >= 10 ? `<a class="icon-btn sm" href="https://wa.me/55${phone}" target="_blank" rel="noopener" title="Abrir no WhatsApp">${ICONS.whats}</a>` : '';
+  const copyBtn = (val,label)=> val ? `<button class="icon-btn sm" data-copy="${esc(val)}" data-copy-label="${esc(label)}" title="Copiar ${esc(label)}">${ICONS.copy}</button>` : '';
+
+  $('drawer').innerHTML = `
+    <div class="drawer-head">
+      <div class="row">
+        <div class="chips-row">
+          <span class="type-chip ${d.tipo==='Tablet'?'tablet':'celular'}">${d.tipo==='Tablet'?ICONS.tablet:ICONS.phone}${esc(d.tipo)}</span>
+          <span class="status ${STATUS_CLASS[d.status]}">${esc(d.status)}</span>
+        </div>
+        <button class="modal-close" data-drawer-close aria-label="Fechar">${ICONS.x}</button>
+      </div>
+      <div class="drawer-person">
+        ${avatar(d.colaborador)}
+        <div><h2>${esc(d.colaborador)||'—'}</h2><p>${esc(d.modelo)||'Modelo não informado'}</p></div>
+      </div>
+    </div>
+    <div class="drawer-body">
+      ${alerts ? `<div class="alerts">${alerts}</div>` : ''}
+      <h4>Dados do aparelho</h4>
+      <div class="dl">
+        <div class="dl-row"><span class="k">Modelo</span><span class="v">${esc(d.modelo)||'—'}</span><span></span></div>
+        <div class="dl-row"><span class="k">IMEI</span><span class="v mono">${esc(d.imei)||'—'}${im && luhnOk(im) ? ` <span style="color:var(--teal);font-family:Inter;font-size:11px;font-weight:700;">✓ válido</span>`:''}</span>${copyBtn(d.imei,'IMEI')}</div>
+        <div class="dl-row"><span class="k">Status</span><span class="v">${esc(d.status)}</span><span></span></div>
+      </div>
+      <h4>Responsável</h4>
+      <div class="dl">
+        <div class="dl-row"><span class="k">Colaborador</span><span class="v">${esc(d.colaborador)||'—'}</span>${copyBtn(d.colaborador,'Nome')}</div>
+        <div class="dl-row"><span class="k">Contato</span><span class="v">${esc(d.contato)||'—'}</span><span style="display:flex;gap:4px">${wa}${copyBtn(d.contato,'Contato')}</span></div>
+        <div class="dl-row"><span class="k">Filial</span><span class="v">${esc(d.filial)||'—'}</span><span></span></div>
+        <div class="dl-row"><span class="k">Setor</span><span class="v">${esc(d.setor)||'—'}</span><span></span></div>
+      </div>
+      ${d.observacoes ? `<h4>Observações</h4><div class="notes">${esc(d.observacoes)}</div>` : ''}
+      ${related.length ? `<h4>Outros aparelhos deste colaborador</h4><div class="related">${related.map(r=>`<button data-open="${esc(r.id)}">${esc(r.modelo)||'—'}<span>${esc(r.tipo)} · ${esc(r.filial)||'—'}</span></button>`).join('')}</div>` : ''}
+      <h4>Histórico</h4>
+      <div class="timeline">
+        ${d.atualizadoEm && d.atualizadoEm !== d.criadoEm ? `<div><i></i><span><b>Última atualização</b>${fmtDate(d.atualizadoEm,true)} · ${relTime(d.atualizadoEm)}</span></div>` : ''}
+        <div><i style="background:var(--ink-faint);box-shadow:none"></i><span><b>Cadastrado</b>${fmtDate(d.criadoEm,true)}${d.criadoEm?' · '+relTime(d.criadoEm):''}</span></div>
+      </div>
+    </div>
+    <div class="drawer-foot">
+      <button class="btn btn-ghost" data-act="edit" data-id="${esc(d.id)}">${lock?ICONS.lock:ICONS.edit}Editar</button>
+      <button class="btn btn-soft-danger" data-act="delete" data-id="${esc(d.id)}">${lock?ICONS.lock:ICONS.trash}Excluir</button>
+    </div>`;
+}
+
+/* =========================================================
+   AUTENTICAÇÃO (senha de edição)
+   ========================================================= */
+function setUnlocked(v){
+  state.unlocked = v;
+  try{ v ? sessionStorage.setItem('frota-unlocked','1') : sessionStorage.removeItem('frota-unlocked'); }catch(e){}
+  updateAuthBadge(); renderList(); if(state.drawerId) renderDrawer();
+}
+function updateAuthBadge(){
+  const b = $('authBadge');
+  b.className = 'pill-btn' + (state.unlocked ? ' on' : '');
+  b.innerHTML = (state.unlocked ? ICONS.unlock : ICONS.lock) + '<span>' + (state.unlocked ? 'Edição liberada' : 'Somente adicionar') + '</span>';
+  b.title = state.unlocked ? 'Clique para bloquear a edição' : 'Clique para liberar edição com senha';
+}
+function onAuthBadgeClick(){
+  if(state.unlocked){ setUnlocked(false); showToast('Edição bloqueada novamente.'); }
+  else { state.pendingAction='unlock'; openModal('passOverlay'); }
+}
+function requestAction(type,id){
+  if(state.unlocked){
+    if(type==='edit') openEditModal(id);
+    if(type==='delete') confirmDelete(id);
+    return;
+  }
+  state.pendingAction = type+':'+id;
+  openModal('passOverlay');
+}
+function openAdmin(){
+  if(state.unlocked){ renderAdminStats(); openModal('adminOverlay'); return; }
+  state.pendingAction = 'admin';
+  openModal('passOverlay');
+}
+function confirmPassword(){
+  const val = $('passInput').value;
+  if(val !== state.settings.password){
+    $('passError').textContent = 'Senha incorreta. Tente novamente.';
+    $('passError').classList.add('show');
+    $('passInput').select();
+    return;
+  }
+  const action = state.pendingAction;
+  state.pendingAction = null;
+  $('passOverlay').classList.remove('show');
+  $('passInput').value=''; $('passError').classList.remove('show');
+  setUnlocked(true);
+  if(action === 'admin'){ renderAdminStats(); openModal('adminOverlay'); }
+  else if(action && action.startsWith('edit:')){ openEditModal(action.slice(5)); }
+  else if(action && action.startsWith('delete:')){ confirmDelete(action.slice(7)); }
+  else { showToast('Edição liberada para esta sessão.'); }
+}
+function renderAdminStats(){
+  const ds = state.devices;
+  const ult = ds.map(d=>d.atualizadoEm||d.criadoEm).filter(Boolean).sort().pop();
+  $('adminStats').innerHTML = `
+    <div><b>${ds.length}</b><span>Registros</span></div>
+    <div><b>${new Set(ds.map(d=>norm(d.colaborador)).filter(Boolean)).size}</b><span>Colaboradores</span></div>
+    <div><b style="font-size:15px;line-height:1.9">${ult ? fmtDate(ult) : '—'}</b><span>Última alteração</span></div>`;
+}
+async function changePassword(){
+  const p1 = $('newPassInput').value, p2 = $('newPassInput2').value;
+  const err = $('adminError');
+  err.classList.remove('show');
+  if(p1.length < 6){ err.textContent='A senha precisa ter ao menos 6 caracteres.'; err.classList.add('show'); return; }
+  if(p1 !== p2){ err.textContent='As senhas não coincidem.'; err.classList.add('show'); return; }
+  try{
+    await setDoc(settingsRef, { password: p1 }, { merge: true });
+    state.settings.password = p1;
+    closeModal('adminOverlay');
+    showToast('Senha de edição atualizada.');
+  }catch(e){
+    console.error(e);
+    err.textContent = 'Não foi possível salvar a nova senha no Firebase.'+(e&&e.code?' (código: '+e.code+')':'');
+    err.classList.add('show');
+  }
+}
+function downloadBackup(){
+  const data = { exportadoEm: new Date().toISOString(), colecao: 'dispositivos', total: state.devices.length, registros: state.devices };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'backup-frota-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  showToast('Backup baixado.');
+}
+
+/* =========================================================
+   CADASTRO / EDIÇÃO
+   ========================================================= */
+function setFormTipo(t){
+  state.formTipo = t;
+  $('f_tipo_seg').innerHTML = ['Celular','Tablet'].map(v=>
+    `<button type="button" data-v="${v}" class="${v===t?'on':''}">${v==='Tablet'?ICONS.tablet:ICONS.phone}${v}</button>`).join('');
+}
+function fillForm(d){
+  setFormTipo(d.tipo || 'Celular');
+  $('f_colaborador').value = d.colaborador || '';
+  $('f_contato').value = d.contato || '';
+  $('f_modelo').value = d.modelo || '';
+  $('f_imei').value = d.imei || '';
+  $('f_filial').value = FILIAIS.includes(d.filial) ? d.filial : (state.filial || FILIAIS[0]);
+  $('f_setor').value = d.setor || '';
+  $('f_status').value = d.status || 'Em uso';
+  $('f_obs').value = d.observacoes || '';
+  $('deviceError').classList.remove('show');
+  $('colabField').classList.remove('invalid');
+  validateImei();
+}
+function openAddModal(){
+  state.editingId = null;
+  $('deviceModalTitle').textContent = 'Novo dispositivo';
+  $('deviceModalSub').textContent = 'Preencha os dados do aparelho e do responsável.';
+  $('saveDeviceBtn').textContent = 'Cadastrar dispositivo';
+  fillForm({ filial: state.filial || FILIAIS[0], tipo: state.tipo || 'Celular' });
+  openModal('deviceOverlay');
+  setTimeout(()=>$('f_modelo').focus(), 40);
+}
+function openEditModal(id){
+  const d = state.devices.find(x=>x.id===id);
+  if(!d) return;
+  state.editingId = id;
+  $('deviceModalTitle').textContent = 'Editar dispositivo';
+  $('deviceModalSub').textContent = 'Cadastrado em ' + fmtDate(d.criadoEm) + (d.atualizadoEm ? ' · última alteração ' + relTime(d.atualizadoEm) : '');
+  $('saveDeviceBtn').textContent = 'Salvar alterações';
+  fillForm(d);
+  openModal('deviceOverlay');
+}
+/* valida IMEI ao digitar; retorna dono duplicado (se houver) */
+function validateImei(){
+  const hint = $('imeiHint');
+  const raw = $('f_imei').value.trim();
+  const im = digits(raw);
+  $('imeiField').classList.remove('invalid');
+  if(!raw){ hint.className='field-hint'; hint.innerHTML='Opcional, mas recomendado para rastreio e bloqueio em caso de perda.'; return null; }
+  const dup = state.devices.find(x=>x.id!==state.editingId && imeiDigits(x)===im);
+  if(dup){
+    hint.className='field-hint bad'; $('imeiField').classList.add('invalid');
+    hint.innerHTML = ICONS.alert + `<span>Já cadastrado para <b>${esc(dup.colaborador)}</b> (${esc(dup.filial)||'sem filial'}).</span>`;
+    return dup;
+  }
+  if(im.length !== 15){ hint.className='field-hint warn'; hint.innerHTML = ICONS.alert + `<span>${im.length} de 15 dígitos.</span>`; return null; }
+  if(!luhnOk(im)){ hint.className='field-hint warn'; hint.innerHTML = ICONS.alert + '<span>Dígito verificador não confere — revise o número.</span>'; return null; }
+  hint.className='field-hint ok'; hint.innerHTML = ICONS.check + '<span>IMEI válido.</span>';
+  return null;
+}
+let saving = false;
+async function saveDevice(){
+  if(saving) return;
+  const colaborador = $('f_colaborador').value.trim();
+  const modelo = $('f_modelo').value.trim();
+  const imei = $('f_imei').value.trim();
+  const err = $('deviceError');
+  err.classList.remove('show');
+  $('colabField').classList.toggle('invalid', !colaborador);
+
+  if(!colaborador || !modelo){
+    err.textContent = 'Preencha ao menos o colaborador e o modelo.';
+    err.classList.add('show');
+    (!modelo ? $('f_modelo') : $('f_colaborador')).focus();
+    return;
+  }
+  const dup = validateImei();
+  if(dup){
+    err.textContent = 'Este IMEI já pertence a outro dispositivo cadastrado ('+dup.colaborador+'). Verifique antes de salvar.';
+    err.classList.add('show');
+    $('f_imei').focus();
+    return;
+  }
+  const existente = state.editingId ? state.devices.find(x=>x.id===state.editingId) : null;
+  const agora = new Date().toISOString();
+  const data = {
+    tipo: state.formTipo,
+    colaborador,
+    contato: $('f_contato').value.trim(),
+    modelo,
+    imei,
+    filial: $('f_filial').value.trim(),
+    setor: $('f_setor').value.trim(),
+    status: $('f_status').value,
+    observacoes: $('f_obs').value.trim(),
+    criadoEm: existente && existente.criadoEm ? existente.criadoEm : agora,
+    atualizadoEm: agora
+  };
+  const id = state.editingId || ('dev_'+Date.now()+'_'+Math.random().toString(36).slice(2,7));
+  const btn = $('saveDeviceBtn');
+  const label = btn.textContent;
+  saving = true; btn.disabled = true; btn.textContent = 'Salvando…';
+  try{
+    await setDoc(doc(devicesCol, id), data);
+    const wasEditing = !!state.editingId;
+    closeModal('deviceOverlay');
+    showToast(wasEditing ? 'Dispositivo atualizado.' : 'Dispositivo cadastrado.');
+  }catch(e){
+    console.error(e);
+    const code = e && e.code ? e.code : 'erro desconhecido';
+    err.textContent = code === 'permission-denied'
+      ? 'O Firebase bloqueou a gravação (permission-denied). No Firebase Console › Firestore Database › Regras, libere a escrita na coleção "dispositivos".'
+      : 'Não foi possível salvar no Firebase. (código: '+code+(e&&e.message?' — '+e.message:'')+')';
+    err.classList.add('show');
+  }finally{
+    saving = false; btn.disabled = false; btn.textContent = label;
+  }
+}
+async function confirmDelete(id){
+  const d = state.devices.find(x=>x.id===id);
+  if(!d) return;
+  const ok = await confirmDialog('Excluir dispositivo?',
+    `O ${esc(d.tipo.toLowerCase())} <b>${esc(d.modelo)||'sem modelo'}</b> de <b>${esc(d.colaborador)}</b>${d.filial?' ('+esc(d.filial)+')':''} será removido permanentemente. Essa ação não pode ser desfeita.<br><br><span style="font-size:12.5px;color:var(--ink-faint)">Dica: para manter o histórico, altere o status para “Desativado” em vez de excluir.</span>`,
+    'Excluir definitivamente');
+  if(!ok) return;
+  try{
+    await deleteDoc(doc(devicesCol, id));
+    if(state.drawerId===id) closeDrawer();
+    showToast('Dispositivo excluído.');
+  }catch(e){
+    console.error(e);
+    showToast('Não foi possível excluir no Firebase.'+(e&&e.code?' ('+e.code+')':''), true);
+  }
+}
+
+/* =========================================================
+   EXPORTAÇÃO
+   ========================================================= */
+function toRow(d){
+  return {
+    'Tipo': d.tipo, 'Colaborador': d.colaborador||'', 'Contato': d.contato||'', 'Modelo': d.modelo||'',
+    'IMEI': d.imei||'', 'Filial': d.filial||'', 'Setor': d.setor||'', 'Status': d.status,
+    'Observações': d.observacoes||'',
+    'Cadastrado em': d.criadoEm ? new Date(d.criadoEm).toLocaleDateString('pt-BR') : '',
+    'Atualizado em': d.atualizadoEm ? new Date(d.atualizadoEm).toLocaleDateString('pt-BR') : ''
+  };
+}
+const COL_WIDTHS = [{wch:10},{wch:26},{wch:17},{wch:24},{wch:18},{wch:15},{wch:16},{wch:12},{wch:36},{wch:13},{wch:13}];
+
+function exportExcel(scope){
+  if(typeof XLSX === 'undefined'){ showToast('Biblioteca de planilhas não carregou. Verifique a internet.', true); return; }
+  const list = scope==='view' ? currentList() : sortList(state.devices);
+  if(!list.length){ showToast('Não há dispositivos para exportar.', true); return; }
+  const wb = XLSX.utils.book_new();
+
+  const ws = XLSX.utils.json_to_sheet(list.map(toRow));
+  ws['!cols'] = COL_WIDTHS;
+  ws['!autofilter'] = { ref: ws['!ref'] };
+  XLSX.utils.book_append_sheet(wb, ws, 'Dispositivos');
+
+  // Resumo por filial
+  const resumo = FILIAIS.map(f=>{
+    const l = list.filter(d=>d.filial===f);
+    const r = { 'Filial': f, 'Total': l.length, 'Celulares': l.filter(d=>d.tipo==='Celular').length, 'Tablets': l.filter(d=>d.tipo==='Tablet').length };
+    STATUS.forEach(s=> r[s] = l.filter(d=>d.status===s).length);
+    r['Com pendência'] = l.filter(d=>Object.values(ISSUES).some(i=>i.test(d))).length;
+    return r;
+  });
+  const tot = { 'Filial':'TOTAL' };
+  Object.keys(resumo[0]).slice(1).forEach(k=> tot[k] = resumo.reduce((s,r)=>s+r[k],0));
+  resumo.push(tot);
+  const ws2 = XLSX.utils.json_to_sheet(resumo);
+  ws2['!cols'] = [{wch:16},{wch:8},{wch:10},{wch:9},{wch:9},{wch:9},{wch:12},{wch:12},{wch:15}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Resumo por filial');
+
+  // Por setor
+  const setores = [...new Set(list.map(d=>d.setor||'(sem setor)'))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const ws3 = XLSX.utils.json_to_sheet(setores.map(s=>{
+    const l = list.filter(d=>(d.setor||'(sem setor)')===s);
+    return { 'Setor': s, 'Total': l.length, 'Celulares': l.filter(d=>d.tipo==='Celular').length, 'Tablets': l.filter(d=>d.tipo==='Tablet').length };
+  }));
+  ws3['!cols'] = [{wch:22},{wch:8},{wch:10},{wch:9}];
+  XLSX.utils.book_append_sheet(wb, ws3, 'Resumo por setor');
+
+  // Pendências
+  const pend = [];
+  list.forEach(d=> Object.values(ISSUES).forEach(i=>{ if(i.test(d)) pend.push({ 'Pendência': i.label, 'Colaborador': d.colaborador||'', 'Modelo': d.modelo||'', 'IMEI': d.imei||'', 'Filial': d.filial||'', 'Setor': d.setor||'' }); }));
+  if(pend.length){
+    const ws4 = XLSX.utils.json_to_sheet(pend);
+    ws4['!cols'] = [{wch:18},{wch:26},{wch:24},{wch:18},{wch:15},{wch:16}];
+    XLSX.utils.book_append_sheet(wb, ws4, 'Pendências');
+  }
+
+  const suf = (scope==='view' ? '-filtrado' : '') + (state.filial && scope==='view' ? '-'+norm(state.filial).replace(/\s+/g,'-') : '');
+  XLSX.writeFile(wb, 'controle-dispositivos'+suf+'-'+new Date().toISOString().slice(0,10)+'.xlsx');
+  showToast('Planilha exportada com ' + plural(list.length,'dispositivo') + '.');
+}
+function exportCSV(){
+  const list = currentList();
+  if(!list.length){ showToast('Não há dispositivos para exportar.', true); return; }
+  const rows = list.map(toRow);
+  const head = Object.keys(rows[0]);
+  const cell = v => '"' + (v??'').toString().replace(/"/g,'""') + '"';
+  const csv = '﻿' + [head.map(cell).join(';'), ...rows.map(r=>head.map(h=>cell(r[h])).join(';'))].join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' }));
+  a.download = 'controle-dispositivos-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  showToast('CSV exportado com ' + plural(list.length,'dispositivo') + '.');
+}
+function printReport(){
+  const prev = state.view;
+  state.view = 'table';
+  renderHeader(); renderList();
+  const restore = ()=>{ state.view = prev; renderList(); window.removeEventListener('afterprint', restore); };
+  window.addEventListener('afterprint', restore);
+  setTimeout(()=> window.print(), 50);
+}
+
+/* =========================================================
+   EVENTOS
+   ========================================================= */
+function selectFilial(nome){
+  state.filial = nome;
+  renderScope();
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+function clearFilter(k){
+  if(k==='all'){ state.q=''; state.tipo=''; state.setor=''; state.status=''; state.issue=''; }
+  else state[k] = '';
+  renderKpis(); renderInsights(); renderList();
+}
+
+document.addEventListener('click', e=>{
+  const t = e.target;
+
+  const filialBtn = t.closest('[data-filial]');
+  if(filialBtn){ selectFilial(filialBtn.dataset.filial); return; }
+
+  const act = t.closest('[data-act]');
+  if(act){ e.stopPropagation(); requestAction(act.dataset.act, act.dataset.id); return; }
+
+  const cp = t.closest('[data-copy]');
+  if(cp){ copyText(cp.dataset.copy, cp.dataset.copyLabel); return; }
+
+  const op = t.closest('[data-open]');
+  if(op){ openDrawer(op.dataset.open); return; }
+
+  const chip = t.closest('[data-chip]');
+  if(chip){ clearFilter(chip.dataset.chip); return; }
+
+  const st = t.closest('[data-status]');
+  if(st){ state.status = state.status===st.dataset.status ? '' : st.dataset.status; renderInsights(); renderList(); return; }
+
+  const is = t.closest('[data-issue]');
+  if(is){ state.issue = state.issue===is.dataset.issue ? '' : is.dataset.issue; renderInsights(); renderList(); $('listArea').scrollIntoView({behavior:'smooth',block:'start'}); return; }
+
+  const kt = t.closest('[data-kpi-tipo]');
+  if(kt){ state.tipo = state.tipo===kt.dataset.kpiTipo ? '' : kt.dataset.kpiTipo; renderList(); return; }
+
+  const so = t.closest('[data-sort]');
+  if(so){
+    const k = so.dataset.sort;
+    state.sort = { key:k, dir: state.sort.key===k ? -state.sort.dir : 1 };
+    renderList(); return;
+  }
+
+  if(t.closest('[data-empty="add"]')){ openAddModal(); return; }
+  if(t.closest('[data-drawer-close]')){ closeDrawer(); return; }
+
+  const cl = t.closest('[data-close]');
+  if(cl){ closeModal(cl.dataset.close); return; }
+
+  const row = t.closest('#listArea [data-id]');
+  if(row){ openDrawer(row.dataset.id); return; }
+
+  // fecha menu exportar ao clicar fora
+  if(!t.closest('.menu-wrap')) toggleExportMenu(false);
+});
+
+document.querySelectorAll('.overlay').forEach(o=> o.addEventListener('mousedown', e=>{ if(e.target===o) closeModal(o.id); }));
+$('drawerBg').addEventListener('click', closeDrawer);
+
+$('themeBtn').addEventListener('click', toggleTheme);
+$('authBadge').addEventListener('click', onAuthBadgeClick);
+$('adminBtn').addEventListener('click', openAdmin);
+$('addBtn').addEventListener('click', openAddModal);
+$('saveDeviceBtn').addEventListener('click', saveDevice);
+$('passConfirmBtn').addEventListener('click', confirmPassword);
+$('passInput').addEventListener('keydown', e=>{ if(e.key==='Enter') confirmPassword(); });
+$('changePassBtn').addEventListener('click', changePassword);
+$('backupBtn').addEventListener('click', downloadBackup);
+$('confirmOk').addEventListener('click', ()=>{ const r = confirmResolve; confirmResolve=null; $('confirmOverlay').classList.remove('show'); if(r) r(true); });
+$('confirmCancel').addEventListener('click', ()=> closeModal('confirmOverlay'));
+
+$('toggleInsights').addEventListener('click', ()=>{ state.insightsOpen = !state.insightsOpen; lsSet('frota-insights', state.insightsOpen?'1':'0'); renderInsights(); });
+
+let searchTimer;
+$('searchInput').addEventListener('input', e=>{
+  $('searchWrap').classList.toggle('has-value', !!e.target.value);
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(()=>{ state.q = e.target.value; renderList(); }, 120);
+});
+$('searchClear').addEventListener('click', ()=>{ state.q=''; renderList(); $('searchInput').focus(); });
+$('tipoSeg').addEventListener('click', e=>{ const b = e.target.closest('button'); if(!b) return; state.tipo = b.dataset.v; renderList(); });
+$('viewSeg').addEventListener('click', e=>{ const b = e.target.closest('button'); if(!b) return; state.view = b.dataset.v; lsSet('frota-view', state.view); renderList(); });
+$('filterSetor').addEventListener('change', e=>{ state.setor = e.target.value; renderList(); });
+$('filterStatus').addEventListener('change', e=>{ state.status = e.target.value; renderInsights(); renderList(); });
+$('sortSelect').addEventListener('change', e=>{ const [k,d] = e.target.value.split(':'); state.sort = { key:k, dir:+d }; renderList(); });
+
+$('f_tipo_seg').addEventListener('click', e=>{ const b = e.target.closest('button'); if(b) setFormTipo(b.dataset.v); });
+$('f_contato').addEventListener('input', e=>{ e.target.value = formatPhone(e.target.value); });
+$('f_imei').addEventListener('input', validateImei);
+$('f_colaborador').addEventListener('input', ()=> $('colabField').classList.remove('invalid'));
+$('deviceOverlay').addEventListener('keydown', e=>{ if(e.key==='Enter' && (e.ctrlKey||e.metaKey)) saveDevice(); });
+
+function toggleExportMenu(force){
+  const m = $('exportMenu');
+  const show = force ?? !m.classList.contains('show');
+  m.classList.toggle('show', show);
+  $('exportBtn').setAttribute('aria-expanded', show);
+}
+$('exportBtn').addEventListener('click', e=>{ e.stopPropagation(); toggleExportMenu(); });
+$('exportMenu').addEventListener('click', e=>{
+  const b = e.target.closest('[data-export]'); if(!b) return;
+  toggleExportMenu(false);
+  const k = b.dataset.export;
+  if(k==='xlsx-all') exportExcel('all');
+  if(k==='xlsx-view') exportExcel('view');
+  if(k==='csv-view') exportCSV();
+  if(k==='print') printReport();
+});
+
+/* Enter/Espaço abre detalhes em cartões e linhas */
+$('listArea').addEventListener('keydown', e=>{
+  if((e.key==='Enter' || e.key===' ') && e.target.matches('[data-id].card, tr[data-id]')){ e.preventDefault(); openDrawer(e.target.dataset.id); }
+});
+
+/* atalhos de teclado */
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){
+    const o = topOverlay();
+    if(o){ closeModal(o.id); return; }
+    if($('exportMenu').classList.contains('show')){ toggleExportMenu(false); return; }
+    if(state.drawerId){ closeDrawer(); return; }
+    if(document.activeElement===$('searchInput') && state.q){ state.q=''; renderList(); return; }
+    return;
+  }
+  const typing = e.target.closest('input,textarea,select,[contenteditable]');
+  if(typing || e.ctrlKey || e.metaKey || e.altKey || topOverlay()) return;
+  if(e.key==='/'){ e.preventDefault(); $('searchInput').focus(); $('searchInput').select(); }
+  else if(e.key==='n' || e.key==='N'){ e.preventDefault(); closeDrawer(); openAddModal(); }
+  else if(e.key==='v' || e.key==='V'){ state.view = state.view==='cards' ? 'table' : 'cards'; lsSet('frota-view', state.view); renderList(); }
+});
+
+/* =========================================================
+   INÍCIO
+   ========================================================= */
+updateThemeBtn();
+updateAuthBadge();
+renderFilters();
+syncControls();
+renderInsights();
+carregarConfiguracoes();
+assinarDispositivos();
+</script>
+</body>
+</html>
